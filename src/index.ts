@@ -2,10 +2,12 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 
-// Import routes
+// invoice
 import { GET as getInvoices } from './api/invoices/route';
 import { GET as getInvoiceById } from './api/invoices/[id]/route';
 import { GET as getInvoiceView } from './api/invoices/[id]/view/route';
+import { POST as sendInvoiceEmail } from './api/invoices/[id]/send/route';
+import { GET as generateInvoicePDF } from './api/invoices/[id]/generate-pdf/route';
 
 import { GET as getClients } from './api/clients/route';
 import { POST as createClient } from './api/clients/route';
@@ -68,6 +70,8 @@ app.use('*', cors({
 app.get('/api/invoices', getInvoices);
 app.get('/api/invoices/:id', getInvoiceById);
 app.get('/api/invoices/:id/view', getInvoiceView);
+app.post('/api/invoices/:id/send', sendInvoiceEmail);
+app.get('/api/invoices/:id/generate-pdf', generateInvoicePDF);
 app.get('/api/clients', getClients);
 app.post('/api/clients', createClient);
 app.get('/api/clients/:id', getClientById);
