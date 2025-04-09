@@ -56,7 +56,7 @@ app.use('/api/stripe/webhook', cors({
 
 // Default CORS configuration for other endpoints
 app.use('*', cors({
-	origin: ['http://localhost:3000', 'https://dev.invoices-apg.pages.dev/'],
+	origin: ['http://localhost:3000', 'https://dev.invoices-apg.pages.dev'],
 	allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 	allowHeaders: ['Content-Type', 'Authorization'],
 	exposeHeaders: ['Content-Length', 'X-Requested-With'],
