@@ -1,5 +1,9 @@
 import { createDB, schema } from '../db/db';
 import { eq } from 'drizzle-orm';
+import { Resend } from 'resend';
+
+// Initialize Resend with API key
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendInvoiceEmail(invoiceid: string) {
   try {
@@ -50,50 +54,37 @@ export async function sendInvoiceEmail(invoiceid: string) {
     const client_email = client.email;
     const user_name = user.username;
     const currency = invoice.currency;
-    const invoiceUrl = `${process.env.BASE_URL}/invoices/${invoiceid}`;
+    const invoiceUrl = `${process.env.APP_URL}/invoices/${invoiceid}`;
 
-    // Placeholder for email sending logic
-    console.log(`Attempting to send email for invoice ${invoiceid} to ${client_email}`);
-    console.log(`From: ${user_name}`);
-    console.log(`Amount: ${currency} ${total.toFixed(2)}`);
-    console.log(`View URL: ${invoiceUrl}`);
-
-    // Actual email sending implementation (replace with your provider)
-    /*
-    const response = await fetch('https://api.emailprovider.com/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.EMAIL_API_KEY}`
-      },
-      body: JSON.stringify({
-        from: `Invoices App <noreply@yourdomain.com>`,
-        to: client_email,
-        subject: `Invoice #${invoiceid}`,
-        html: `
-          <h2>Invoice from ${user_name}</h2>
+    // Send email using Resend
+    const { data, error } = await resend.emails.send({
+      from: 'Invoices App <onboarding@resend.dev>', // Replace with your verified domain
+      to: client_email,
+      subject: `Invoice #${invoiceid} from ${user_name}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
+          <h2 style="color: #333;">Invoice from ${user_name}</h2>
           <p>Hello,</p>
-          <p>You have an invoice to pay:</p>
-          <ul>
-            <li><strong>Invoice Number:</strong> ${invoiceid}</li>
-            <li><strong>Amount: </strong>${currency} ${total.toFixed(2)}</li>
-          </ul>
-          <p>Please click the button below to view your invoice:</p>
-          <a href=${invoiceUrl} style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">View Invoice</a>
+          <p>You have received an invoice for payment:</p>
+          <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0;">
+            <p><strong>Invoice Number:</strong> ${invoiceid}</p>
+            <p><strong>Amount:</strong> ${currency} ${total.toFixed(2)}</p>
+          </div>
+          <p>Please click the button below to view and pay your invoice:</p>
+          <a href="${invoiceUrl}" style="display: inline-block; background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 15px 0;">View Invoice</a>
+          <p>If you have any questions, please don't hesitate to contact us.</p>
           <p>Thank you!</p>
           <p>Invoices App Team</p>
-        `
-      })
+        </div>
+      `
     });
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      console.error('Email API Response Error:', response.status, errorBody);
-      throw new Error(`Failed to send email through API. Status: ${response.status}`);
+    if (error) {
+      console.error('Resend API Error:', error);
+      throw new Error('Failed to send email through Resend API');
     }
-    */
 
-    console.log("Email sending logic simulated.");
+    console.log(`Email sent successfully to ${client_email}`);
     return { success: true };
   } catch (error) {
     console.error('Error sending email:', error);

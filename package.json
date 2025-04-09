@@ -12,6 +12,7 @@
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.7.5",
 		"@cloudflare/workers-types": "^4.20250407.0",
+		"@types/jspdf": "^2.0.0",
 		"@types/node": "^22.14.0",
 		"drizzle-kit": "^0.30.6",
 		"tsx": "^4.19.3",
@@ -25,7 +26,9 @@
 		"drizzle-orm": "^0.41.0",
 		"hono": "^4.7.5",
 		"jose": "^6.0.10",
+		"jspdf": "^3.0.1",
 		"postgres": "^3.4.5",
+		"resend": "^4.2.0",
 		"stripe": "^18.0.0"
 	}
 }

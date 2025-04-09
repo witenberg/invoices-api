@@ -1,46 +1,54 @@
-import { NextResponse, NextRequest } from 'next/server';
+import { Context } from 'hono';
 import { jsPDF } from 'jspdf';
-import { withPrisma } from '@/lib/db';
+import { createDB, schema } from '../../../../db/db';
+import { eq } from 'drizzle-orm';
 
-export const runtime = 'edge'
-
-export async function GET(
-  request: NextRequest
-) {
+export async function GET(c: Context) {
     try {
-        const id = request.nextUrl.pathname.split('/')[3];
+        const id = c.req.param('id');
         
         if (!id) {
-            return new NextResponse('Invoice ID not provided', { status: 400 });
+            return c.text('Invoice ID not provided', 400);
         }
         
-        const invoice = await withPrisma(async (prisma) => {
-            return await prisma.invoices.findUnique({
-                where: {
-                    invoiceid: parseInt(id)
-                },
-                include: {
-                    users: {
-                        select: {
-                            username: true
-                        }
-                    },
-                    clients: {
-                        select: {
-                            name: true
-                        }
-                    }
-                }
-            });
+        const db = createDB();
+        
+        // Fetch invoice
+        const invoice = await db.query.invoices.findFirst({
+            where: eq(schema.invoices.invoiceid, parseInt(id))
         });
 
         if (!invoice) {
-            return new NextResponse('Invoice not found', { status: 404 });
+            return c.text('Invoice not found', 404);
         }
 
-        const { invoiceid, date, currency, products, users, clients } = invoice;
-        const username = users.username;
-        const client_name = clients.name;
+        // Fetch user
+        const user = await db.query.users.findFirst({
+            where: eq(schema.users.userid, invoice.userid),
+            columns: {
+                username: true
+            }
+        });
+
+        if (!user) {
+            return c.text('User not found', 404);
+        }
+
+        // Fetch client
+        const client = await db.query.clients.findFirst({
+            where: eq(schema.clients.clientid, invoice.clientid),
+            columns: {
+                name: true
+            }
+        });
+
+        if (!client) {
+            return c.text('Client not found', 404);
+        }
+
+        const { invoiceid, date, currency, products } = invoice;
+        const username = user.username;
+        const client_name = client.name;
 
         const total = (products as any[])
             .reduce((sum, product) => {
@@ -50,73 +58,93 @@ export async function GET(
             }, 0)
             .toFixed(2);
 
-    const formattedDate = new Date(date).toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
+        const formattedDate = new Date(date).toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+        });
 
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
-    });
+        const doc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4',
+        });
 
-    doc.setFont('times', 'normal');
+        // Set font and colors
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(33, 33, 33);
 
-    doc.setFontSize(20);
-    doc.text(username, 20, 20);
+        // Header
+        doc.setFontSize(24);
+        doc.text('INVOICE', 20, 20);
+        
+        doc.setFontSize(12);
+        doc.text(`#${invoiceid}`, 20, 30);
 
-    doc.setFontSize(10);
-    doc.text('INVOICE TO', 20, 40);
-    doc.setFontSize(12);
-    doc.text(client_name, 20, 45);
+        // Sender info
+        doc.setFontSize(14);
+        doc.text(username, 20, 45);
+        
+        // Client info
+        doc.setFontSize(12);
+        doc.text('Bill To:', 20, 60);
+        doc.setFontSize(14);
+        doc.text(client_name, 20, 70);
 
-    doc.setFontSize(10);
-    doc.text('DATE', 150, 20);
-    doc.setFontSize(12);
-    doc.text(formattedDate, 150, 25);
-    doc.setFontSize(10);
-    // doc.text(`ID ${invoiceid}`, 150, 30);
+        // Invoice details
+        doc.setFontSize(12);
+        doc.text('Date:', 150, 45);
+        doc.text(formattedDate, 150, 55);
+        doc.text('Currency:', 150, 65);
+        doc.text(currency, 150, 75);
 
-    doc.setFontSize(12);
-    doc.text('DESCRIPTION', 20, 60);
-    doc.text(`AMOUNT (${currency})`, 150, 60);
-    doc.setLineWidth(0.5);
-    doc.line(20, 62, 190, 62);
+        // Table header
+        doc.setFillColor(240, 240, 240);
+        doc.rect(20, 90, 170, 10, 'F');
+        
+        doc.setFontSize(12);
+        doc.text('Description', 25, 97);
+        doc.text('Quantity', 100, 97);
+        doc.text('Price', 130, 97);
+        doc.text('Amount', 160, 97);
 
-    let yPosition = 70;
-    (products as any[]).forEach((product) => {
-      doc.setFontSize(10);
-      doc.text(product.name, 20, yPosition);
-      doc.text(`${product.quantity} x ${parseFloat(product.amount).toFixed(2)}`, 80, yPosition, { align: 'center' });
-      doc.text(`${(parseFloat(product.amount) * product.quantity).toFixed(2)}`, 150, yPosition);
-      yPosition += 10;
-    });
+        // Table content
+        let yPosition = 110;
+        (products as any[]).forEach((product) => {
+            doc.setFontSize(10);
+            doc.text(product.name, 25, yPosition);
+            doc.text(product.quantity.toString(), 100, yPosition);
+            doc.text(parseFloat(product.amount).toFixed(2), 130, yPosition);
+            doc.text((parseFloat(product.amount) * product.quantity).toFixed(2), 160, yPosition);
+            yPosition += 10;
+        });
 
-    doc.line(20, yPosition, 190, yPosition);
-    doc.setFontSize(12);
-    doc.text('TOTAL', 20, yPosition + 5);
-    doc.text(total, 150, yPosition + 5);
+        // Total
+        doc.setFillColor(240, 240, 240);
+        doc.rect(20, yPosition, 170, 10, 'F');
+        
+        doc.setFontSize(12);
+        doc.text('TOTAL', 25, yPosition + 7);
+        doc.text(`${currency} ${total}`, 160, yPosition + 7);
 
-    doc.setFontSize(12);
-    doc.text(`AMOUNT DUE`, 20, yPosition + 15);
-    doc.setFontSize(16);
-    doc.text(`${currency} ${total}`, 150, yPosition + 15);
+        // Footer
+        doc.setFontSize(10);
+        doc.setTextColor(128, 128, 128);
+        doc.text('Thank you for your business!', 105, 270, { align: 'center' });
+        doc.text('Powered by Invoices App', 105, 280, { align: 'center' });
 
-    doc.setFontSize(8);
-    doc.text('Powered by Invoices App', 105, 270, { align: 'center' });
+        // Convert to buffer
+        const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
 
-    const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
-
-    return new NextResponse(pdfBuffer, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${username}-invoice-${invoiceid}.pdf"`,
-      },
-    });
-  } catch (error) {
-    console.error('Error generating PDF:', error);
-    return new NextResponse('Error generating PDF', { status: 500 });
-  }
+        // Return PDF with appropriate headers
+        return new Response(pdfBuffer, {
+            headers: {
+                'Content-Type': 'application/pdf',
+                'Content-Disposition': `attachment; filename="${username}-invoice-${invoiceid}.pdf"`,
+            },
+        });
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        return c.text('Error generating PDF', 500);
+    }
 }

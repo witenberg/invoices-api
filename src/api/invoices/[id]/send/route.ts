@@ -1,57 +1,45 @@
-import { sendInvoiceEmail } from "@/app/actions/email"
-import { withPrisma } from "@/lib/db";
-import { NextResponse, NextRequest } from "next/server";
+import { Context } from 'hono';
+import { createDB, schema } from '../../../../db/db';
+import { eq } from 'drizzle-orm';
+import { sendInvoiceEmail } from '../../../../actions/email';
 
-export const runtime = 'edge'
-
-export async function POST(
-    request: NextRequest
-) {
+export async function POST(c: Context) {
+    const id = c.req.param('id');
+    
+    if (!id) {
+        return c.json({ error: "Invoice ID not provided" }, 400);
+    }
+    
     try {
-        const id = request.nextUrl.pathname.split('/')[3];
-        
-        if (!id) {
-            return NextResponse.json({ error: "Invoice ID not provided" }, { status: 400 });
-        }
-        
         const emailResult = await sendInvoiceEmail(id);
 
         if (!emailResult.success) {
-            return NextResponse.json({ 
+            return c.json({ 
                 error: "Failed to send invoice email" 
-            }, { status: 500 });
+            }, 500);
         }
 
-        const updatedInvoice = await withPrisma(async (prisma) => {
-            return await prisma.invoices.update({
-                where: {
-                    invoiceid: parseInt(id)
-                },
-                data: {
-                    status: 'Sent'
-                },
-                select: {
-                    status: true
-                }
-            });
-        });
-
-        return NextResponse.json({ 
-            message: "Successfully sent invoice", 
-            status: updatedInvoice.status 
-        }, { status: 200 });
-    }
-    catch (error) {
-        console.error("Error sending invoice:", error);
+        const db = createDB();
         
-        if (error instanceof Error) {
-            return NextResponse.json({
-                error: error.message || "An unexpected error occurred while sending the invoice"
-            }, { status: 500 });
+        // Update invoice status to 'Sent'
+        const updatedInvoice = await db
+            .update(schema.invoices)
+            .set({ status: 'Sent' })
+            .where(eq(schema.invoices.invoiceid, parseInt(id)))
+            .returning({ status: schema.invoices.status });
+
+        if (!updatedInvoice || updatedInvoice.length === 0) {
+            return c.json({ 
+                error: "Failed to update invoice status" 
+            }, 500);
         }
 
-        return NextResponse.json({
-            error: "An unexpected error occurred while sending the invoice"
-        }, { status: 500 });
+        return c.json({ 
+            message: "Successfully sent invoice", 
+            status: updatedInvoice[0].status 
+        }, 200);
+    } catch (error) {
+        console.error("Error sending invoice:", error);
+        return c.json({ error: "Internal Server Error" }, 500);
     }
 }
