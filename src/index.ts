@@ -6,6 +6,7 @@ import { logger } from 'hono/logger';
 import { GET as getInvoices } from './api/invoices/route';
 import { GET as getInvoiceById } from './api/invoices/[id]/route';
 import { GET as getInvoiceView } from './api/invoices/[id]/view/route';
+import { POST as saveInvoice } from './api/invoices/save/route';
 import { POST as sendInvoiceEmail } from './api/invoices/[id]/send/route';
 import { GET as generateInvoicePDF } from './api/invoices/[id]/generate-pdf/route';
 
@@ -70,16 +71,23 @@ app.use('*', cors({
 app.get('/api/invoices', getInvoices);
 app.get('/api/invoices/:id', getInvoiceById);
 app.get('/api/invoices/:id/view', getInvoiceView);
+app.post('/api/invoices/save', saveInvoice);
 app.post('/api/invoices/:id/send', sendInvoiceEmail);
 app.get('/api/invoices/:id/generate-pdf', generateInvoicePDF);
+
+// clients
 app.get('/api/clients', getClients);
 app.post('/api/clients', createClient);
 app.get('/api/clients/:id', getClientById);
+
+// subscriptions
 app.get('/api/subscriptions', getSubscriptions);
 app.post('/api/subscriptions/save', saveSubscription);
 app.get('/api/subscriptions/:id', getSubscriptionById);
 app.get('/api/subscriptions/:id/edit', getSubscriptionEdit);
 app.post('/api/subscriptions/:id/update-status', updateSubscriptionStatus);
+
+// settings
 app.get('/api/settings/:id', getSettings);
 app.put('/api/settings/:id', updateSettings);
 app.post('/api/update-preferences', updatePreferences);
