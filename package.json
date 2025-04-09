@@ -12,8 +12,20 @@
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.7.5",
 		"@cloudflare/workers-types": "^4.20250407.0",
+		"@types/node": "^22.14.0",
+		"drizzle-kit": "^0.30.6",
+		"tsx": "^4.19.3",
 		"typescript": "^5.5.2",
 		"vitest": "~3.0.7",
 		"wrangler": "^4.8.0"
+	},
+	"dependencies": {
+		"@stripe/stripe-js": "^7.0.0",
+		"dotenv": "^16.4.7",
+		"drizzle-orm": "^0.41.0",
+		"hono": "^4.7.5",
+		"jose": "^6.0.10",
+		"postgres": "^3.4.5",
+		"stripe": "^18.0.0"
 	}
 }
