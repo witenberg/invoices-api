@@ -31,7 +31,7 @@ export async function POST(c: Context) {
     }
 
     // Verify the webhook signature
-    const publicKey = process.env.PADDLE_PUBLIC_KEY || '';
+    const publicKey = process.env.PADDLE_PUBLIC_KEY!;
     const isValid = verifyPaddleWebhook(rawBody, signature, publicKey);
 
     if (!isValid) {
@@ -160,6 +160,6 @@ export async function POST(c: Context) {
     return c.json({ success: true });
   } catch (error) {
     console.error('Error processing Paddle webhook:', error);
-    return c.json({ error: error }, 500);
+    return c.json({ error: 'Internal server error' }, 500);
   }
 } 
