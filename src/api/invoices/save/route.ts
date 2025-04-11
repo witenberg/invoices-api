@@ -52,7 +52,7 @@ export async function POST(c: Context) {
       }
     }
 
-    if (invoice.options.date === new Date().toISOString().split("T")[0] && savedInvoiceId) {
+    if (invoice.options.date === new Date().toISOString().split("T")[0] && savedInvoiceId && invoice.status === 'Sent') {
       await sendInvoiceEmail(savedInvoiceId.toString());
     }
 

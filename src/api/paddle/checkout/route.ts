@@ -21,29 +21,6 @@ async function checkUserVerified(userId: number): Promise<boolean> {
   }
 }
 
-// Helper function to get user's trial end date
-async function getUserTrialEndDate(userId: number): Promise<Date | null> {
-  try {
-    const db = createDB();
-    const user = await db.query.users.findFirst({
-      where: eq(schema.users.userid, userId),
-      columns: {
-        trialEndDate: true,
-        isTrialActive: true
-      }
-    });
-
-    if (!user?.isTrialActive || !user.trialEndDate) {
-      return null;
-    }
-
-    return new Date(user.trialEndDate);
-  } catch (error) {
-    console.error("Error getting trial end date:", error);
-    return null;
-  }
-}
-
 export async function POST(c: Context) {
   try {
     const { planId, userId } = await c.req.json();
@@ -52,10 +29,11 @@ export async function POST(c: Context) {
       return c.json({ error: 'User ID is required' }, 400);
     }
 
-    // const isUserVerified = await checkUserVerified(parseInt(userId.toString()));
+    // Check if user is verified
+    const isUserVerified = await checkUserVerified(parseInt(userId.toString()));
     
     // if (!isUserVerified) {
-    //   return c.json({ error: 'Unauthorized' }, 401);
+    //   return c.json({ error: 'User is not verified' }, 401);
     // }
 
     const priceId = paddlePricesIds[planId];
@@ -63,9 +41,6 @@ export async function POST(c: Context) {
     if (!priceId) {
       return c.json({ error: 'Invalid plan selected' }, 400);
     }
-
-    // Get the trial end date
-    const trialEndDate = await getUserTrialEndDate(parseInt(userId.toString()));
     
     // Prepare the request body
     const requestBody: any = {
@@ -80,14 +55,9 @@ export async function POST(c: Context) {
       },
     };
 
-    // If trial is active, set the subscription to start after trial ends
-    if (trialEndDate) {
-      // Format the date as ISO string and remove milliseconds
-      const formattedDate = trialEndDate.toISOString().split('.')[0] + 'Z';
-      requestBody.scheduled_for = formattedDate;
-    }
+    console.log('Request body:', JSON.stringify(requestBody, null, 2));
 
-    const response = await fetch('https://sandbox-api.paddle.com/transactions', {
+    const response = await fetch(`${process.env.PADDLE_API_URL}/transactions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -97,6 +67,7 @@ export async function POST(c: Context) {
     });
 
     const data = await response.json() as any;
+    console.log('Full Paddle response:', JSON.stringify(data, null, 2));
 
     if (data.data && data.data.checkout.url) {
       return c.json({
