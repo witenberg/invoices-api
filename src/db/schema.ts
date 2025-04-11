@@ -23,7 +23,7 @@ export const users = pgTable("users", {
 	stripeConnected: boolean("stripe_connected").default(false),
 	trialEndDate: timestamp("trial_end_date"),
 	isTrialActive: boolean("is_trial_active").default(true).notNull(),
-	subscriptionStatus: varchar("subscription_status", { length: 20 }).default('trial'),
+	isSubscriptionActive: boolean("is_subscription_active").default(false).notNull(),
 	subscriptionEndDate: timestamp("subscription_end_date"),
 	paddleSubscriptionId: varchar("paddle_subscription_id", { length: 255 }),
 }, (table) => [

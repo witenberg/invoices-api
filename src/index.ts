@@ -10,6 +10,7 @@ import { POST as saveInvoice } from './api/invoices/save/route';
 import { POST as sendInvoiceEmail } from './api/invoices/[id]/send/route';
 import { GET as generateInvoicePDF } from './api/invoices/[id]/generate-pdf/route';
 
+// clients
 import { GET as getClients } from './api/clients/route';
 import { POST as createClient } from './api/clients/route';
 import { GET as getClientById } from './api/clients/[id]/route';
@@ -21,6 +22,7 @@ import { GET as getSubscriptionEdit } from './api/subscriptions/[id]/edit/route'
 import { PUT as updateSubscriptionStatus } from './api/subscriptions/[id]/update-status/route';
 import { POST as updatePreferences } from './api/update-preferences/route';
 
+// settings
 import { GET as getSettings } from './api/settings/[id]/route';
 import { PUT as updateSettings } from './api/settings/[id]/route';
 
@@ -32,7 +34,8 @@ import { POST as signup } from './api/auth/signup/route';
 import { GET as findUserByEmail } from './api/users/find-by-email/route';
 import { POST as addUser } from './api/users/add/route';
 import { GET as isVerified } from './api/users/verify/route';
-import { GET as getTrialStatus } from './api/users/trial-status/route';
+import { GET as getAccessCheck } from './api/users/access-check/route';
+import { GET as getBillingStatus } from './api/users/billing-status/route';
 
 // Stripe routes
 import { POST as createStripePayment } from './api/stripe/create-payment/route';
@@ -106,8 +109,8 @@ app.post('/api/auth/signup', signup);
 app.get('/api/users/find-by-email', findUserByEmail);
 app.post('/api/users/add', addUser);
 app.get('/api/users/verify', isVerified);
-app.get('/api/users/trial-status', getTrialStatus);
-
+app.get('/api/users/access-check', getAccessCheck);
+app.get('/api/users/billing-status', getBillingStatus);
 // Paddle routes
 app.post('/api/paddle/checkout', paddleCheckout);
 app.post('/api/paddle/webhook', handlePaddleWebhook);

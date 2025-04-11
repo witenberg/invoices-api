@@ -147,8 +147,8 @@ export async function POST(c: Context) {
         // Update user's subscription status in our database
         await db.update(schema.users)
           .set({
-            subscriptionStatus: 'active',
-            subscriptionEndDate: new Date(subscriptionData.end_date),
+            isSubscriptionActive: true,
+            subscriptionEndDate: subscriptionData.end_date ? new Date(subscriptionData.end_date) : null,
             paddleSubscriptionId: subscriptionData.id,
           })
           .where(eq(schema.users.userid, parseInt(userId)));
@@ -158,8 +158,8 @@ export async function POST(c: Context) {
         // Update subscription status
         await db.update(schema.users)
           .set({
-            subscriptionStatus: 'active',
-            subscriptionEndDate: new Date(subscriptionData.end_date),
+            isSubscriptionActive: true,
+            subscriptionEndDate: subscriptionData.end_date ? new Date(subscriptionData.end_date) : null,
             paddleSubscriptionId: subscriptionData.id,
           })
           .where(eq(schema.users.userid, parseInt(userId)));
@@ -169,8 +169,8 @@ export async function POST(c: Context) {
         // Update subscription status to expired
         await db.update(schema.users)
           .set({
-            subscriptionStatus: 'expired',
-            subscriptionEndDate: new Date(subscriptionData.end_date),
+            isSubscriptionActive: false,
+            subscriptionEndDate: subscriptionData.end_date ? new Date(subscriptionData.end_date) : null,
           })
           .where(eq(schema.users.userid, parseInt(userId)));
         break;
@@ -179,7 +179,8 @@ export async function POST(c: Context) {
         // Update subscription end date
         await db.update(schema.users)
           .set({
-            subscriptionEndDate: new Date(subscriptionData.end_date),
+            isSubscriptionActive: true,
+            subscriptionEndDate: subscriptionData.end_date ? new Date(subscriptionData.end_date) : null,
           })
           .where(eq(schema.users.userid, parseInt(userId)));
         break;
