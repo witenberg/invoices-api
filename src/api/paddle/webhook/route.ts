@@ -148,7 +148,7 @@ export async function POST(c: Context) {
         await db.update(schema.users)
           .set({
             isSubscriptionActive: true,
-            subscriptionEndDate: subscriptionData.end_date ? new Date(subscriptionData.end_date) : null,
+            subscriptionEndDate: subscriptionData.next_billed_at ? new Date(subscriptionData.next_billed_at) : null,
             paddleSubscriptionId: subscriptionData.id,
           })
           .where(eq(schema.users.userid, parseInt(userId)));
@@ -159,7 +159,7 @@ export async function POST(c: Context) {
         await db.update(schema.users)
           .set({
             isSubscriptionActive: true,
-            subscriptionEndDate: subscriptionData.end_date ? new Date(subscriptionData.end_date) : null,
+            subscriptionEndDate: subscriptionData.next_billed_at ? new Date(subscriptionData.next_billed_at) : null,
             paddleSubscriptionId: subscriptionData.id,
           })
           .where(eq(schema.users.userid, parseInt(userId)));
@@ -170,7 +170,7 @@ export async function POST(c: Context) {
         await db.update(schema.users)
           .set({
             isSubscriptionActive: false,
-            subscriptionEndDate: subscriptionData.end_date ? new Date(subscriptionData.end_date) : null,
+            subscriptionEndDate: subscriptionData.next_billed_at ? new Date(subscriptionData.next_billed_at) : null,
           })
           .where(eq(schema.users.userid, parseInt(userId)));
         break;
@@ -180,7 +180,7 @@ export async function POST(c: Context) {
         await db.update(schema.users)
           .set({
             isSubscriptionActive: true,
-            subscriptionEndDate: subscriptionData.end_date ? new Date(subscriptionData.end_date) : null,
+            subscriptionEndDate: subscriptionData.next_billed_at ? new Date(subscriptionData.next_billed_at) : null,
           })
           .where(eq(schema.users.userid, parseInt(userId)));
         break;
