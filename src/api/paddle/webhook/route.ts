@@ -7,12 +7,48 @@ import crypto from 'crypto';
 function verifyPaddleWebhook(
   rawBody: string,
   signature: string,
-  publicKey: string
+  secretKey: string
 ): boolean {
   try {
-    const verifier = crypto.createVerify('sha256');
-    verifier.update(rawBody);
-    return verifier.verify(publicKey, signature, 'base64');
+    // 1. Parse the signature header
+    const signatureParts = signature.split(';').reduce((acc, part) => {
+      const [key, value] = part.split('=');
+      acc[key] = value;
+      return acc;
+    }, {} as Record<string, string>);
+
+    const timestamp = signatureParts['ts'];
+    const receivedSignature = signatureParts['h1'];
+
+    if (!timestamp || !receivedSignature) {
+      console.error('Invalid signature format');
+      return false;
+    }
+
+    // 2. Check if the timestamp is not too old (optional, but recommended)
+    const eventTime = parseInt(timestamp);
+    const currentTime = Math.floor(Date.now() / 1000);
+    const timeDiff = Math.abs(currentTime - eventTime);
+    
+    // Reject if the event is older than 5 minutes
+    if (timeDiff > 300) {
+      console.error('Webhook timestamp is too old');
+      return false;
+    }
+
+    // 3. Build the signed payload
+    const signedPayload = `${timestamp}:${rawBody}`;
+
+    // 4. Hash the signed payload
+    const hmac = crypto.createHmac('sha256', secretKey);
+    hmac.update(signedPayload);
+    const expectedSignature = hmac.digest('hex');
+
+    // 5. Compare signatures
+    return crypto.timingSafeEqual(
+      Buffer.from(receivedSignature),
+      Buffer.from(expectedSignature)
+    );
   } catch (error) {
     console.error('Error verifying Paddle webhook:', error);
     return false;
@@ -31,8 +67,8 @@ export async function POST(c: Context) {
     }
 
     // Verify the webhook signature
-    const publicKey = process.env.PADDLE_PUBLIC_KEY!;
-    const isValid = verifyPaddleWebhook(rawBody, signature, publicKey);
+    const secretKey = process.env.PADDLE_WEBHOOK_SECRET!;
+    const isValid = verifyPaddleWebhook(rawBody, signature, secretKey);
 
     if (!isValid) {
       return c.json({ error: 'Invalid signature' }, 401);
