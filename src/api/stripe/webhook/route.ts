@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 
 export async function POST(c: Context) {
   const body = await c.req.text();
-  const signature = c.req.header('stripe-signature');
+  const signature = c.req.header('Stripe-Signature');
 
   if (!signature) {
     return c.json({ error: 'No signature provided' }, 400);
