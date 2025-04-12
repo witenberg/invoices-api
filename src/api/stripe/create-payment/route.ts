@@ -3,9 +3,9 @@ import { stripe } from '../../../config/stripe';
 
 export async function POST(c: Context) {
   try {
-    const { amount, currency, accountId, metadata } = await c.req.json();
+    const { amount, currency, accountId, invoiceId } = await c.req.json();
 
-    if (!amount || !currency || !accountId) {
+    if (!amount || !currency || !accountId || !invoiceId) {
       return c.json({ error: 'Missing required fields' }, 400);
     }
 
@@ -26,7 +26,9 @@ export async function POST(c: Context) {
         transfer_data: {
           destination: accountId,
         },
-        metadata,
+        metadata: {
+          invoiceId: invoiceId.toString()
+        },
       },
     });
 
