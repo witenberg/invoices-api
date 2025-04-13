@@ -44,6 +44,8 @@ import { POST as createStripePayment } from './api/stripe/create-payment/route';
 import { POST as connectStripe } from './api/stripe/connect/route';
 import { POST as getStripeStatus } from './api/stripe/status/route';
 import { POST as handleStripeWebhook } from './api/stripe/webhook/route';
+import { POST as getStripeDashboardLink } from './api/stripe/dashboard-link/route';
+
 
 // Paddle routes
 import { POST as paddleCheckout } from './api/paddle/checkout/route';
@@ -103,6 +105,7 @@ app.post('/api/stripe/create-payment', createStripePayment);
 app.post('/api/stripe/connect', connectStripe);
 app.post('/api/stripe/status', getStripeStatus);
 app.post('/api/stripe/webhook', handleStripeWebhook);
+app.post('/api/stripe/dashboard-link', getStripeDashboardLink);
 
 // Auth routes
 app.post('/api/auth/login', login);
