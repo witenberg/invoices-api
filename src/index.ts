@@ -14,6 +14,8 @@ import { GET as generateInvoicePDF } from './api/invoices/[id]/generate-pdf/rout
 import { GET as getClients } from './api/clients/route';
 import { POST as createClient } from './api/clients/route';
 import { GET as getClientById } from './api/clients/[id]/route';
+import { GET as getClientsList } from './api/clients/list/route';
+import { PUT as updateClient } from './api/clients/[id]/route';
 
 import { GET as getSubscriptions } from './api/subscriptions/route';
 import { POST as saveSubscription } from './api/subscriptions/save/route';
@@ -81,8 +83,9 @@ app.get('/api/invoices/:id/generate-pdf', generateInvoicePDF);
 // clients
 app.get('/api/clients', getClients);
 app.post('/api/clients', createClient);
+app.get('/api/clients/list', getClientsList);
 app.get('/api/clients/:id', getClientById);
-
+app.put('/api/clients/:id', updateClient);
 // subscriptions
 app.get('/api/subscriptions', getSubscriptions);
 app.post('/api/subscriptions/save', saveSubscription);

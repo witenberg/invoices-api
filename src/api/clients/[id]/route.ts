@@ -13,10 +13,10 @@ export async function GET(c: Context) {
         const db = createDB();
         const client = await db.query.clients.findFirst({
             where: eq(schema.clients.clientid, parseInt(id)),
-            with: {
-                invoices: true,
-                subscriptions: true
-            }
+            // with: {
+            //     invoices: true,
+            //     subscriptions: true
+            // }
         });
 
         if (!client) {
@@ -44,7 +44,9 @@ export async function PUT(c: Context) {
             .set({
                 name: clientData.name,
                 email: clientData.email,
-                address: clientData.address || ''
+                address: clientData.address || '',
+                currency: clientData.currency || 'USD',
+                language: clientData.language || 'English'
             })
             .where(eq(schema.clients.clientid, parseInt(id)))
             .returning();

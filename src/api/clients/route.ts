@@ -32,7 +32,9 @@ export async function POST(c: Context) {
       userid: parseInt(client.userId),
       name: client.name,
       email: client.email,
-      address: client.address || ''
+      address: client.address || '',
+      currency: client.currency || 'USD',
+      language: client.language || 'English'
     }).returning({
       clientid: schema.clients.clientid
     });

@@ -37,6 +37,9 @@ export const clients = pgTable("clients", {
 	name: varchar({ length: 255 }).notNull(),
 	email: varchar({ length: 255 }).notNull(),
 	address: text(),
+	status: varchar({ length: 20 }).default('No card').notNull(),
+	currency: varchar({ length: 10 }).default('USD').notNull(),
+	language: varchar({ length: 15 }).default('English').notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.userid],

@@ -12,8 +12,8 @@ import * as relations from './relations';
 export function createDB() {
     const connectionString = process.env.DATABASE_URL!;
     const client = postgres(connectionString, {prepare: false});
-    return drizzle(client, { schema, ...relations });
-  }
+    return drizzle(client, { schema });
+}
 
 // Export schema and relations for use in routes
 export { schema, relations }; 
