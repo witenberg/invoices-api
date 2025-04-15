@@ -38,7 +38,8 @@ export async function POST(c: Context) {
       loginMethod: login_method,
       password: password,
       trialEndDate: trialEndDate,
-      isTrialActive: true
+      isTrialActive: true,
+      isverified: false
     }).returning();
 
     return c.json({

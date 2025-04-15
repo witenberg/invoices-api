@@ -36,6 +36,7 @@ export async function POST(c: Context) {
           userid: user.userid,
           email: user.email,
           isNewUser: false,
+          isVerified: user.isverified,
         });
       } else {
         return c.json({ error: "Invalid password" }, 401);

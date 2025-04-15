@@ -119,9 +119,23 @@ export const invoicesInApp = app.table("invoices", {
 		}).onDelete("cascade"),
 ]);
 
+export const emailVerificationTokensInApp = app.table("email_verification_tokens", {
+	tokenid: serial().notNull(),
+	userid: integer().notNull(),
+	token: varchar({ length: 255 }).notNull(),
+	expiresAt: timestamp("expires_at").notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.userid],
+			foreignColumns: [usersInApp.userid],
+			name: "email_verification_tokens_userid_fkey"
+		}).onDelete("cascade"),
+]);
+
 // Export original names for backward compatibility
 export const users = usersInApp;
 export const clients = clientsInApp;
 export const logs = logsInApp;
 export const subscriptions = subscriptionsInApp;
 export const invoices = invoicesInApp;
+export const emailVerificationTokens = emailVerificationTokensInApp;

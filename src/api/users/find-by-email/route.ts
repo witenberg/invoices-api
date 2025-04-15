@@ -23,6 +23,7 @@ export async function GET(c: Context) {
       userid: user.userid,
       email: user.email,
       password: user.password,
+      isverified: user.isverified,
     });
   } catch (error) {
     console.error("Error finding user:", error);

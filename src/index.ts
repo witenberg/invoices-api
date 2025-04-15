@@ -31,6 +31,8 @@ import { PUT as updateSettings } from './api/settings/[id]/route';
 // Auth routes
 import { POST as login } from './api/auth/login/route';
 import { POST as signup } from './api/auth/signup/route';
+import { POST as sendVerification } from './api/auth/send-verification/route';
+import { POST as verifyEmail } from './api/auth/verify-email/route';
 
 // User routes
 import { GET as findUserByEmail } from './api/users/find-by-email/route';
@@ -110,6 +112,8 @@ app.post('/api/stripe/dashboard-link', getStripeDashboardLink);
 // Auth routes
 app.post('/api/auth/login', login);
 app.post('/api/auth/signup', signup);
+app.post('/api/auth/send-verification', sendVerification);
+app.post('/api/auth/verify-email', verifyEmail);
 
 // User routes
 app.get('/api/users/find-by-email', findUserByEmail);
