@@ -1,9 +1,10 @@
-import { pgTable, foreignKey, serial, integer, varchar, text, check, numeric, boolean, date, jsonb, timestamp, pgSequence } from "drizzle-orm/pg-core"
+import { pgSchema, serial, varchar, boolean, numeric, text, timestamp, foreignKey, integer, date, jsonb } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
-export const invoicesInvoiceidSeq = pgSequence("invoices_invoiceid_seq", {  startWith: "1", increment: "1", minValue: "1", maxValue: "9223372036854775807", cache: "1", cycle: false })
+export const app = pgSchema("app");
 
-export const users = pgTable("users", {
+
+export const usersInApp = app.table("users", {
 	userid: serial().notNull(),
 	username: varchar({ length: 255 }).notNull(),
 	email: varchar({ length: 255 }).notNull(),
@@ -23,32 +24,42 @@ export const users = pgTable("users", {
 	stripeConnected: boolean("stripe_connected").default(false),
 	trialEndDate: timestamp("trial_end_date"),
 	isTrialActive: boolean("is_trial_active").default(true).notNull(),
-	isSubscriptionActive: boolean("is_subscription_active").default(false).notNull(),
-	subscriptionEndDate: timestamp("subscription_end_date"),
 	paddleSubscriptionId: varchar("paddle_subscription_id", { length: 255 }),
-}, (table) => [
-	check("password_required", sql`(((login_method)::text = 'credentials'::text) AND (password IS NOT NULL)) OR (((login_method)::text = 'google'::text) AND (password IS NULL))`),
-	check("users_login_method_check", sql`(login_method)::text = ANY (ARRAY[('credentials'::character varying)::text, ('google'::character varying)::text])`),
-]);
+	isSubscriptionActive: boolean("is_subscription_active").default(false),
+	subscriptionEndDate: timestamp("subscription_end_date"),
+});
 
-export const clients = pgTable("clients", {
+export const clientsInApp = app.table("clients", {
 	clientid: serial().notNull(),
 	userid: integer().notNull(),
 	name: varchar({ length: 255 }).notNull(),
 	email: varchar({ length: 255 }).notNull(),
 	address: text(),
-	status: varchar({ length: 20 }).default('No card').notNull(),
-	currency: varchar({ length: 10 }).default('USD').notNull(),
-	language: varchar({ length: 15 }).default('English').notNull(),
+	status: varchar({ length: 20 }).default('No card'),
+	currency: varchar({ length: 10 }).default('USD'),
+	language: varchar({ length: 15 }).default('English'),
 }, (table) => [
 	foreignKey({
 			columns: [table.userid],
-			foreignColumns: [users.userid],
+			foreignColumns: [usersInApp.userid],
 			name: "clients_userid_fkey"
 		}).onDelete("cascade"),
 ]);
 
-export const subscriptions = pgTable("subscriptions", {
+export const logsInApp = app.table("logs", {
+	logid: serial().notNull(),
+	userid: integer().notNull(),
+	action: text().notNull(),
+	timestamp: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+	foreignKey({
+			columns: [table.userid],
+			foreignColumns: [usersInApp.userid],
+			name: "logs_userid_fkey"
+		}).onDelete("cascade"),
+]);
+
+export const subscriptionsInApp = app.table("subscriptions", {
 	subscriptionid: serial().notNull(),
 	userid: integer().notNull(),
 	clientid: integer().notNull(),
@@ -69,19 +80,17 @@ export const subscriptions = pgTable("subscriptions", {
 }, (table) => [
 	foreignKey({
 			columns: [table.clientid],
-			foreignColumns: [clients.clientid],
+			foreignColumns: [clientsInApp.clientid],
 			name: "fk_clients"
 		}).onDelete("cascade"),
 	foreignKey({
 			columns: [table.userid],
-			foreignColumns: [users.userid],
+			foreignColumns: [usersInApp.userid],
 			name: "fk_users"
 		}).onDelete("cascade"),
-	check("subscriptions_frequency_check", sql`(frequency)::text = ANY (ARRAY[('Weekly'::character varying)::text, ('Every 2 weeks'::character varying)::text, ('Every 4 weeks'::character varying)::text, ('Monthly'::character varying)::text, ('Quarterly'::character varying)::text, ('Every 6 months'::character varying)::text, ('Yearly'::character varying)::text])`),
-	check("subscriptions_status_check", sql`(status)::text = ANY (ARRAY[('Active'::character varying)::text, ('Paused'::character varying)::text, ('Deleted'::character varying)::text])`),
 ]);
 
-export const invoices = pgTable("invoices", {
+export const invoicesInApp = app.table("invoices", {
 	invoiceid: integer().default(sql`nextval('invoices_invoiceid_seq'::regclass)`).notNull(),
 	userid: integer().notNull(),
 	clientid: integer().notNull(),
@@ -100,32 +109,19 @@ export const invoices = pgTable("invoices", {
 }, (table) => [
 	foreignKey({
 			columns: [table.clientid],
-			foreignColumns: [clients.clientid],
+			foreignColumns: [clientsInApp.clientid],
 			name: "invoices_clientid_fkey"
 		}).onDelete("cascade"),
 	foreignKey({
 			columns: [table.userid],
-			foreignColumns: [users.userid],
+			foreignColumns: [usersInApp.userid],
 			name: "invoices_userid_fkey"
 		}).onDelete("cascade"),
-	foreignKey({
-			columns: [table.subscriptionid],
-			foreignColumns: [subscriptions.subscriptionid],
-			name: "invoices_subscriptionid_fkey"
-		}).onDelete("set null"),
-	check("invoices_language_check", sql`(language)::text = ANY (ARRAY[('Polski'::character varying)::text, ('English'::character varying)::text, ('Deutsch'::character varying)::text, ('Français'::character varying)::text])`),
-	check("invoices_status_check", sql`(status)::text = ANY (ARRAY[('Draft'::character varying)::text, ('Sent'::character varying)::text, ('Paid'::character varying)::text, ('Refunded'::character varying)::text, ('Deleted'::character varying)::text])`),
 ]);
 
-export const logs = pgTable("logs", {
-	logid: serial().notNull(),
-	userid: integer().notNull(),
-	action: text().notNull(),
-	timestamp: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-}, (table) => [
-	foreignKey({
-			columns: [table.userid],
-			foreignColumns: [users.userid],
-			name: "logs_userid_fkey"
-		}).onDelete("cascade"),
-]);
+// Export original names for backward compatibility
+export const users = usersInApp;
+export const clients = clientsInApp;
+export const logs = logsInApp;
+export const subscriptions = subscriptionsInApp;
+export const invoices = invoicesInApp;

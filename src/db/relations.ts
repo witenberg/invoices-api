@@ -1,47 +1,54 @@
 import { relations } from "drizzle-orm/relations";
-import { users, clients, subscriptions, invoices, logs } from "./schema";
+import { usersInApp, clientsInApp, logsInApp, subscriptionsInApp, invoicesInApp } from "./schema";
 
-export const clientsRelations = relations(clients, ({one, many}) => ({
-	user: one(users, {
-		fields: [clients.userid],
-		references: [users.userid]
+export const clientsInAppRelations = relations(clientsInApp, ({one, many}) => ({
+	usersInApp: one(usersInApp, {
+		fields: [clientsInApp.userid],
+		references: [usersInApp.userid]
 	}),
-	subscriptions: many(subscriptions),
-	invoices: many(invoices),
+	subscriptionsInApps: many(subscriptionsInApp),
+	invoicesInApps: many(invoicesInApp),
 }));
 
-export const usersRelations = relations(users, ({many}) => ({
-	clients: many(clients),
-	subscriptions: many(subscriptions),
-	invoices: many(invoices),
-	logs: many(logs),
+export const usersInAppRelations = relations(usersInApp, ({many}) => ({
+	clientsInApps: many(clientsInApp),
+	logsInApps: many(logsInApp),
+	subscriptionsInApps: many(subscriptionsInApp),
+	invoicesInApps: many(invoicesInApp),
 }));
 
-export const subscriptionsRelations = relations(subscriptions, ({one}) => ({
-	client: one(clients, {
-		fields: [subscriptions.clientid],
-		references: [clients.clientid]
-	}),
-	user: one(users, {
-		fields: [subscriptions.userid],
-		references: [users.userid]
+export const logsInAppRelations = relations(logsInApp, ({one}) => ({
+	usersInApp: one(usersInApp, {
+		fields: [logsInApp.userid],
+		references: [usersInApp.userid]
 	}),
 }));
 
-export const invoicesRelations = relations(invoices, ({one}) => ({
-	client: one(clients, {
-		fields: [invoices.clientid],
-		references: [clients.clientid]
+export const subscriptionsInAppRelations = relations(subscriptionsInApp, ({one}) => ({
+	clientsInApp: one(clientsInApp, {
+		fields: [subscriptionsInApp.clientid],
+		references: [clientsInApp.clientid]
 	}),
-	user: one(users, {
-		fields: [invoices.userid],
-		references: [users.userid]
+	usersInApp: one(usersInApp, {
+		fields: [subscriptionsInApp.userid],
+		references: [usersInApp.userid]
 	}),
 }));
 
-export const logsRelations = relations(logs, ({one}) => ({
-	user: one(users, {
-		fields: [logs.userid],
-		references: [users.userid]
+export const invoicesInAppRelations = relations(invoicesInApp, ({one}) => ({
+	clientsInApp: one(clientsInApp, {
+		fields: [invoicesInApp.clientid],
+		references: [clientsInApp.clientid]
+	}),
+	usersInApp: one(usersInApp, {
+		fields: [invoicesInApp.userid],
+		references: [usersInApp.userid]
 	}),
 }));
+
+// Export original names for backward compatibility
+export const clientsRelations = clientsInAppRelations;
+export const usersRelations = usersInAppRelations;
+export const logsRelations = logsInAppRelations;
+export const subscriptionsRelations = subscriptionsInAppRelations;
+export const invoicesRelations = invoicesInAppRelations;

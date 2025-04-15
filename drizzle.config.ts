@@ -10,4 +10,5 @@ export default defineConfig({
   },
   strict: false,
   verbose: true,
+  schemaFilter: ['app']
 });

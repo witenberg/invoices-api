@@ -58,7 +58,6 @@ export async function GET(c: Context) {
         hasAccess = true;
       }
     }
-
     return c.json({ hasAccess });
   } catch (error) {
     console.error('Error checking user access:', error);

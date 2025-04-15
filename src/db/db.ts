@@ -11,7 +11,12 @@ import * as relations from './relations';
 
 export function createDB() {
     const connectionString = process.env.DATABASE_URL!;
-    const client = postgres(connectionString, {prepare: false});
+    const client = postgres(connectionString, {
+        prepare: false,
+        connection: {
+            search_path: 'app'
+        }
+    });
     return drizzle(client, { schema });
 }
 

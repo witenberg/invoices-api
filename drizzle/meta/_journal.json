@@ -8,6 +8,13 @@
       "when": 1744054573010,
       "tag": "0000_gray_silver_fox",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1744734832501,
+      "tag": "0001_small_grim_reaper",
+      "breakpoints": true
     }
   ]
 }

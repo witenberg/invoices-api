@@ -14,7 +14,7 @@
 		"@cloudflare/workers-types": "^4.20250407.0",
 		"@types/jspdf": "^2.0.0",
 		"@types/node": "^22.14.0",
-		"drizzle-kit": "^0.30.6",
+		"drizzle-kit": "^0.31.0",
 		"tsx": "^4.19.3",
 		"typescript": "^5.5.2",
 		"vitest": "~3.0.7",
