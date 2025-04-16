@@ -4,25 +4,26 @@ import { eq } from 'drizzle-orm';
 
 export async function GET(c: Context) {
   try {
-    const email = c.req.query('email');
+    const id = c.req.query('id');
 
-    if (!email) {
-      return c.json({ error: "Email is required" }, 400);
+    if (!id) {
+      return c.json({ error: "User ID is required" }, 400);
     }
 
     const db = createDB();
     const user = await db.query.users.findFirst({
-      where: eq(schema.users.email, email)
+      where: eq(schema.users.userid, parseInt(id))
     });
 
     if (!user) {
       return c.json({ error: "User not found" }, 404);
     }
 
+    console.log("user: ", user);
+
     return c.json({
       userid: user.userid,
       email: user.email,
-      password: user.password,
       isverified: user.isverified,
       isTrialActive: user.isTrialActive,
       trialEndDate: user.trialEndDate,

@@ -37,6 +37,9 @@ export async function POST(c: Context) {
           email: user.email,
           isNewUser: false,
           isVerified: user.isverified,
+          isTrialActive: user.isTrialActive,
+          trialEndDate: user.trialEndDate,
+          isSubscriptionActive: user.isSubscriptionActive,
         });
       } else {
         return c.json({ error: "Invalid password" }, 401);

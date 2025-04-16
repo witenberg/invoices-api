@@ -36,6 +36,7 @@ import { POST as verifyEmail } from './api/auth/verify-email/route';
 
 // User routes
 import { GET as findUserByEmail } from './api/users/find-by-email/route';
+import { GET as findUserById } from './api/users/find-by-id/route';
 import { POST as addUser } from './api/users/add/route';
 import { GET as isVerified } from './api/users/verify/route';
 import { GET as getAccessCheck } from './api/users/access-check/route';
@@ -119,6 +120,7 @@ app.post('/api/auth/verify-email', verifyEmail);
 app.get('/api/users/find-by-email', findUserByEmail);
 app.post('/api/users/add', addUser);
 app.get('/api/users/verify', isVerified);
+app.get('/api/users/find-by-id', findUserById);
 app.get('/api/users/access-check', getAccessCheck);
 app.get('/api/users/billing-status', getBillingStatus);
 // Paddle routes

@@ -10,6 +10,10 @@ function verifyPaddleWebhook(
   secretKey: string
 ): boolean {
   try {
+    console.log('Verifying webhook with signature:', signature);
+    console.log('Raw body:', rawBody);
+    console.log('Secret key exists:', !!secretKey);
+
     // 1. Parse the signature header
     const signatureParts = signature.split(';').reduce((acc, part) => {
       const [key, value] = part.split('=');
@@ -17,11 +21,13 @@ function verifyPaddleWebhook(
       return acc;
     }, {} as Record<string, string>);
 
+    console.log('Signature parts:', signatureParts);
+
     const timestamp = signatureParts['ts'];
     const receivedSignature = signatureParts['h1'];
 
     if (!timestamp || !receivedSignature) {
-      console.error('Invalid signature format');
+      console.error('Invalid signature format - missing timestamp or h1');
       return false;
     }
 
@@ -29,6 +35,10 @@ function verifyPaddleWebhook(
     const eventTime = parseInt(timestamp);
     const currentTime = Math.floor(Date.now() / 1000);
     const timeDiff = Math.abs(currentTime - eventTime);
+    
+    console.log('Event time:', eventTime);
+    console.log('Current time:', currentTime);
+    console.log('Time difference:', timeDiff);
     
     // Reject if the event is older than 5 minutes
     if (timeDiff > 300) {
@@ -38,17 +48,22 @@ function verifyPaddleWebhook(
 
     // 3. Build the signed payload
     const signedPayload = `${timestamp}:${rawBody}`;
+    console.log('Signed payload:', signedPayload);
 
     // 4. Hash the signed payload
     const hmac = crypto.createHmac('sha256', secretKey);
     hmac.update(signedPayload);
     const expectedSignature = hmac.digest('hex');
+    console.log('Expected signature:', expectedSignature);
+    console.log('Received signature:', receivedSignature);
 
     // 5. Compare signatures
-    return crypto.timingSafeEqual(
+    const isValid = crypto.timingSafeEqual(
       Buffer.from(receivedSignature),
       Buffer.from(expectedSignature)
     );
+    console.log('Signature validation result:', isValid);
+    return isValid;
   } catch (error) {
     console.error('Error verifying Paddle webhook:', error);
     return false;

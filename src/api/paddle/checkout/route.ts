@@ -32,9 +32,9 @@ export async function POST(c: Context) {
     // Check if user is verified
     const isUserVerified = await checkUserVerified(parseInt(userId.toString()));
     
-    // if (!isUserVerified) {
-    //   return c.json({ error: 'User is not verified' }, 401);
-    // }
+    if (!isUserVerified) {
+      return c.json({ error: 'User is not verified' }, 401);
+    }
 
     const priceId = paddlePricesIds[planId];
 
@@ -55,8 +55,6 @@ export async function POST(c: Context) {
       },
     };
 
-    console.log('Request body:', JSON.stringify(requestBody, null, 2));
-
     const response = await fetch(`${process.env.PADDLE_API_URL}/transactions`, {
       method: 'POST',
       headers: {
@@ -67,7 +65,8 @@ export async function POST(c: Context) {
     });
 
     const data = await response.json() as any;
-    console.log('Full Paddle response:', JSON.stringify(data, null, 2));
+    // console.log('Full Paddle response:', JSON.stringify(data, null, 2));
+    console.log(data.data.checkout.url);
 
     if (data.data && data.data.checkout.url) {
       return c.json({
