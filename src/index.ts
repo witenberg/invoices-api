@@ -54,6 +54,9 @@ import { POST as getStripeDashboardLink } from './api/stripe/dashboard-link/rout
 import { POST as paddleCheckout } from './api/paddle/checkout/route';
 import { POST as handlePaddleWebhook } from './api/paddle/webhook/route';
 
+// help
+import { POST as sendSupportMessage } from './api/help/route';
+
 const app = new Hono();
 
 // Middleware
@@ -126,6 +129,9 @@ app.get('/api/users/billing-status', getBillingStatus);
 // Paddle routes
 app.post('/api/paddle/checkout', paddleCheckout);
 app.post('/api/paddle/webhook', handlePaddleWebhook);
+
+// Help routes
+app.post('/api/help', sendSupportMessage);
 
 // Error handling
 app.onError((err, c) => {

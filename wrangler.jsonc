@@ -20,7 +20,8 @@
 	"vars": {
 		"APP_URL": "https://dev.invoices-apg.pages.dev",
 		"PADDLE_API_URL": "https://sandbox-api.paddle.com",
-		"STRIPE_PUBLISHABLE_KEY": "pk_test_51R6UcOIIi1cQg9noEfex3s4aRxESiEAkQdikRKM6vSyqWvdzg0GYEdcjKEShm9ZoC8VS1kk5QX1ncIvJBS9y5mcr00AJyIiii4"
+		"STRIPE_PUBLISHABLE_KEY": "pk_test_51R6UcOIIi1cQg9noEfex3s4aRxESiEAkQdikRKM6vSyqWvdzg0GYEdcjKEShm9ZoC8VS1kk5QX1ncIvJBS9y5mcr00AJyIiii4",
+		"SUPPORT_EMAIL": "jakub.witenberg@gmail.com"
 	}
 	/**
 	 * Smart Placement
