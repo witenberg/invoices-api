@@ -10,6 +10,10 @@ import { POST as saveInvoice } from './api/invoices/save/route';
 import { POST as sendInvoiceEmail } from './api/invoices/[id]/send/route';
 import { GET as generateInvoicePDF } from './api/invoices/[id]/generate-pdf/route';
 
+// reports
+import { GET as getReportData } from './api/reports/route';
+import { GET as getReportStatistics } from './api/reports/statistics/route';
+
 // clients
 import { GET as getClients } from './api/clients/route';
 import { POST as createClient } from './api/clients/route';
@@ -87,6 +91,10 @@ app.get('/api/invoices/:id/view', getInvoiceView);
 app.post('/api/invoices/save', saveInvoice);
 app.post('/api/invoices/:id/send', sendInvoiceEmail);
 app.get('/api/invoices/:id/generate-pdf', generateInvoicePDF);
+
+// Reports routes
+app.get('/api/reports', getReportData);
+app.get('/api/reports/statistics', getReportStatistics);
 
 // clients
 app.get('/api/clients', getClients);
