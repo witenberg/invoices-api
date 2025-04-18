@@ -6,7 +6,7 @@ import { format, subMonths } from 'date-fns';
 import Stripe from 'stripe';
 
 export async function GET(c: Context) {
-  const currency = c.req.query('currency');
+  const currency = c.req.query('currency')?.toLowerCase();
   const userId = c.req.query('userId');
 
   if (!userId || !currency) {
@@ -20,7 +20,10 @@ export async function GET(c: Context) {
     // Check if user exists and has Stripe connected
     const db = createDB();
     const user = await db
-      .select()
+      .select({
+        stripeConnected: schema.users.stripeConnected,
+        stripeAccountid: schema.users.stripeAccountid
+      })
       .from(schema.users)
       .where(eq(schema.users.userid, parseInt(userId)))
       .limit(1);
@@ -29,7 +32,7 @@ export async function GET(c: Context) {
       return c.json({ error: 'User not found' }, 404);
     }
 
-    if (!user[0].stripeConnected) {
+    if (!user[0].stripeConnected || !user[0].stripeAccountid) {
       return c.json({ 
         error: 'Payments not enabled. Please enable payments in your settings.' 
       }, 400);
@@ -43,14 +46,17 @@ export async function GET(c: Context) {
     const fromTimestamp = Math.floor(startDate.getTime() / 1000);
     const toTimestamp = Math.floor(endDate.getTime() / 1000);
 
-    // Fetch payments from Stripe
-    const payments = await stripe.paymentIntents.list({
+    // First, get all transfers to this connected account
+    const transfers = await stripe.transfers.list({
       created: {
         gte: fromTimestamp,
         lte: toTimestamp,
       },
-      limit: 100,
+      destination: user[0].stripeAccountid,
+      limit: 100
     });
+
+    console.log('Transfers:', transfers);
 
     // Initialize data structure for 12 months
     const monthsData = new Map();
@@ -62,12 +68,12 @@ export async function GET(c: Context) {
       monthsCount.set(monthKey, 0);
     }
 
-    // Process each payment and sum up amounts
-    payments.data.forEach((payment: Stripe.PaymentIntent) => {
-      if (payment.currency === currency) {
-        const monthKey = format(new Date(payment.created * 1000), 'yyyy-MM');
+    // Process each transfer and sum up amounts
+    transfers.data.forEach((transfer: Stripe.Transfer) => {
+      if (transfer.currency === currency) {
+        const monthKey = format(new Date(transfer.created * 1000), 'yyyy-MM');
         if (monthsData.has(monthKey)) {
-          const amount = payment.amount / 100; // Convert from cents to currency
+          const amount = transfer.amount / 100; // Convert from cents to currency
           monthsData.set(monthKey, monthsData.get(monthKey) + amount);
           monthsCount.set(monthKey, monthsCount.get(monthKey) + 1);
         }
@@ -96,30 +102,34 @@ export async function GET(c: Context) {
     const twelveMonthsAgoTimestamp = Math.floor(twelveMonthsAgo.getTime() / 1000);
 
     // Fetch statistics from Stripe
-    const [monthToDatePayments, lastMonthPayments, lastThreeMonthsPayments, lastTwelveMonthsPayments] = await Promise.all([
-      stripe.paymentIntents.list({
+    const [monthToDateTransfers, lastMonthTransfers, lastThreeMonthsTransfers, lastTwelveMonthsTransfers] = await Promise.all([
+      stripe.transfers.list({
         created: { gte: monthToDateTimestamp },
-        limit: 100,
+        destination: user[0].stripeAccountid,
+        limit: 100
       }),
-      stripe.paymentIntents.list({
+      stripe.transfers.list({
         created: { gte: lastMonthTimestamp, lt: monthToDateTimestamp },
-        limit: 100,
+        destination: user[0].stripeAccountid,
+        limit: 100
       }),
-      stripe.paymentIntents.list({
+      stripe.transfers.list({
         created: { gte: threeMonthsAgoTimestamp },
-        limit: 100,
+        destination: user[0].stripeAccountid,
+        limit: 100
       }),
-      stripe.paymentIntents.list({
+      stripe.transfers.list({
         created: { gte: twelveMonthsAgoTimestamp },
-        limit: 100,
+        destination: user[0].stripeAccountid,
+        limit: 100
       })
     ]);
 
     // Calculate totals for each period
-    const calculateTotal = (payments: Stripe.PaymentIntent[]) => {
-      return payments
-        .filter(p => p.currency === currency)
-        .reduce((sum, p) => sum + (p.amount / 100), 0);
+    const calculateTotal = (transfers: Stripe.Transfer[]) => {
+      return transfers
+        .filter(t => t.currency === currency)
+        .reduce((sum, t) => sum + (t.amount / 100), 0);
     };
 
     const monthNames = [
@@ -132,19 +142,19 @@ export async function GET(c: Context) {
         labels,
         values,
         counts,
-        currency
+        currency: currency.toUpperCase()
       },
       statistics: {
-        monthToDate: calculateTotal(monthToDatePayments.data),
+        monthToDate: calculateTotal(monthToDateTransfers.data),
         currentMonth: {
-          value: calculateTotal(lastMonthPayments.data),
+          value: calculateTotal(lastMonthTransfers.data),
           month: monthNames[startOfLastMonth.getMonth()],
           year: startOfLastMonth.getFullYear()
         },
-        lastThreeMonths: calculateTotal(lastThreeMonthsPayments.data),
-        lastTwelveMonths: calculateTotal(lastTwelveMonthsPayments.data),
-        allTime: calculateTotal(payments.data),
-        currency
+        lastThreeMonths: calculateTotal(lastThreeMonthsTransfers.data),
+        lastTwelveMonths: calculateTotal(lastTwelveMonthsTransfers.data),
+        allTime: calculateTotal(transfers.data),
+        currency: currency.toUpperCase()
       }
     });
 

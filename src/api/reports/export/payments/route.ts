@@ -7,8 +7,6 @@ export async function POST(c: Context) {
   const db = createDB();
   const { userId, from, to } = await c.req.json();
 
-  console.log(userId, from, to);
-
   if (!userId || !from || !to) {
     return c.json({ 
       error: 'Missing required parameters',
@@ -19,7 +17,10 @@ export async function POST(c: Context) {
   try {
     // Check if user exists and has Stripe connected
     const user = await db
-      .select()
+      .select({
+        stripeConnected: schema.users.stripeConnected,
+        stripeAccountid: schema.users.stripeAccountid
+      })
       .from(schema.users)
       .where(eq(schema.users.userid, parseInt(userId)))
       .limit(1);
@@ -28,7 +29,7 @@ export async function POST(c: Context) {
       return c.json({ error: 'User not found' }, 404);
     }
 
-    if (!user[0].stripeConnected) {
+    if (!user[0].stripeConnected || !user[0].stripeAccountid) {
       return c.json({ 
         error: 'Payments not enabled. Please enable payments in your settings.' 
       }, 400);
@@ -38,21 +39,23 @@ export async function POST(c: Context) {
     const fromTimestamp = Math.floor(new Date(from).getTime() / 1000);
     const toTimestamp = Math.floor(new Date(to).getTime() / 1000);
 
-    // Fetch payments from Stripe
-    const payments = await stripe.paymentIntents.list({
+    // Fetch transfers from Stripe
+    const transfers = await stripe.transfers.list({
       created: {
         gte: fromTimestamp,
         lte: toTimestamp,
       },
+      destination: user[0].stripeAccountid,
       limit: 100,
     });
-    console.log(payments.data);
 
     // Format the data for CSV
-    const headers = 'Payment ID,Amount,Currency,Status,Created,Customer,Description\n';
-    const data = payments.data.map((payment: any) => 
-      `${payment.id},${payment.amount},${payment.currency},${payment.status},${new Date(payment.created * 1000).toISOString()},"${payment.customer || ''}","${payment.description || ''}"`
-    );
+    const headers = 'Transfer ID,Amount,Currency,Status,Created,Description,Source Transaction\n';
+    const data = transfers.data.map((transfer: any) => {
+      const amount = (transfer.amount / 100).toFixed(2); // Convert cents to currency with 2 decimal places
+      const date = new Date(transfer.created * 1000).toISOString();
+      return `${transfer.id},${amount},${transfer.currency.toUpperCase()},${transfer.status},${date},"${transfer.description || ''}","${transfer.source_transaction || ''}"`;
+    });
 
     const csvContent = headers + data.join('\n');
 
