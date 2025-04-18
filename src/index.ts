@@ -11,8 +11,11 @@ import { POST as sendInvoiceEmail } from './api/invoices/[id]/send/route';
 import { GET as generateInvoicePDF } from './api/invoices/[id]/generate-pdf/route';
 
 // reports
-import { GET as getReportData } from './api/reports/route';
-import { GET as getReportStatistics } from './api/reports/statistics/route';
+import { GET as getInvoicesReport } from './api/reports/invoices/route';
+import { GET as getPaymentsReport } from './api/reports/payments/route';
+import { POST as exportPayments } from './api/reports/export/payments/route';
+import { POST as exportInvoices } from './api/reports/export/invoices/route';
+import { POST as exportClients } from './api/reports/export/clients/route';
 
 // clients
 import { GET as getClients } from './api/clients/route';
@@ -93,8 +96,11 @@ app.post('/api/invoices/:id/send', sendInvoiceEmail);
 app.get('/api/invoices/:id/generate-pdf', generateInvoicePDF);
 
 // Reports routes
-app.get('/api/reports', getReportData);
-app.get('/api/reports/statistics', getReportStatistics);
+app.get('/api/reports/invoices', getInvoicesReport);
+app.get('/api/reports/payments', getPaymentsReport);
+app.post('/api/reports/export/invoices', exportInvoices);
+app.post('/api/reports/export/payments', exportPayments);
+app.post('/api/reports/export/clients', exportClients);
 
 // clients
 app.get('/api/clients', getClients);
