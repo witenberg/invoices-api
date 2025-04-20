@@ -1,16 +1,6 @@
 import { Context } from 'hono';
 import { createDB, schema } from '../../db/db';
-import { eq, and, sql } from 'drizzle-orm';
-
-interface SalesPageListResponse {
-  salespageid: number;
-  title: string;
-  status: string;
-  currency: string;
-  total: number;
-  frequency: string;
-  orders: number;
-}
+import { eq, and } from 'drizzle-orm';
 
 export async function GET(c: Context) {
   try {
@@ -37,10 +27,8 @@ export async function GET(c: Context) {
         currency: schema.salesPages.currency,
         total: schema.salesPages.price,
         frequency: schema.salesPages.frequency,
-        orders: sql<number>`COUNT(${schema.orders.id})`
       })
       .from(schema.salesPages)
-      .leftJoin(schema.orders, eq(schema.orders.salespageid, schema.salesPages.id))
       .where(and(...conditions))
       .groupBy(schema.salesPages.id)
       .orderBy(schema.salesPages.id);
