@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { usersInApp, clientsInApp, logsInApp, subscriptionsInApp, invoicesInApp, emailVerificationTokensInApp } from "./schema";
+import { usersInApp, clientsInApp, logsInApp, subscriptionsInApp, invoicesInApp, emailVerificationTokensInApp, salesPagesInApp } from "./schema";
 
 export const clientsInAppRelations = relations(clientsInApp, ({one, many}) => ({
 	usersInApp: one(usersInApp, {
@@ -16,6 +16,7 @@ export const usersInAppRelations = relations(usersInApp, ({many}) => ({
 	subscriptionsInApps: many(subscriptionsInApp),
 	invoicesInApps: many(invoicesInApp),
 	emailVerificationTokens: many(emailVerificationTokensInApp),
+	salesPagesInApps: many(salesPagesInApp),
 }));
 
 export const logsInAppRelations = relations(logsInApp, ({one}) => ({
@@ -54,6 +55,13 @@ export const emailVerificationTokensInAppRelations = relations(emailVerification
 	}),
 }));
 
+export const salesPagesInAppRelations = relations(salesPagesInApp, ({one, many}) => ({
+	usersInApp: one(usersInApp, {
+		fields: [salesPagesInApp.userid],
+		references: [usersInApp.userid]
+	}),
+}));
+
 // Export original names for backward compatibility
 export const clientsRelations = clientsInAppRelations;
 export const usersRelations = usersInAppRelations;
@@ -61,3 +69,4 @@ export const logsRelations = logsInAppRelations;
 export const subscriptionsRelations = subscriptionsInAppRelations;
 export const invoicesRelations = invoicesInAppRelations;
 export const emailVerificationTokensRelations = emailVerificationTokensInAppRelations;
+export const salesPagesRelations = salesPagesInAppRelations;

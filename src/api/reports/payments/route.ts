@@ -56,8 +56,6 @@ export async function GET(c: Context) {
       limit: 100
     });
 
-    console.log('Transfers:', transfers);
-
     // Initialize data structure for 12 months
     const monthsData = new Map();
     const monthsCount = new Map();

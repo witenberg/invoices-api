@@ -24,12 +24,21 @@ import { GET as getClientById } from './api/clients/[id]/route';
 import { GET as getClientsList } from './api/clients/list/route';
 import { PUT as updateClient } from './api/clients/[id]/route';
 
+// subscriptions
 import { GET as getSubscriptions } from './api/subscriptions/route';
 import { POST as saveSubscription } from './api/subscriptions/save/route';
 import { GET as getSubscriptionById } from './api/subscriptions/[id]/route';
 import { GET as getSubscriptionEdit } from './api/subscriptions/[id]/edit/route';
 import { PUT as updateSubscriptionStatus } from './api/subscriptions/[id]/update-status/route';
 import { POST as updatePreferences } from './api/update-preferences/route';
+
+// sales pages
+import { POST as saveSalesPage } from './api/sales-pages/save/route';
+import { GET as getSalesPages } from './api/sales-pages/route';
+import { GET as getSalesPageById } from './api/sales-pages/[id]/route';
+import { GET as getSalesPageOrders } from './api/sales-pages/[id]/orders/route';
+import { POST as updateSalesPageStatus } from './api/sales-pages/[id]/route';
+import { POST as createSalesPagePayment } from './api/sales-pages/create-payment/route';
 
 // settings
 import { GET as getSettings } from './api/settings/[id]/route';
@@ -114,6 +123,14 @@ app.post('/api/subscriptions/save', saveSubscription);
 app.get('/api/subscriptions/:id', getSubscriptionById);
 app.get('/api/subscriptions/:id/edit', getSubscriptionEdit);
 app.post('/api/subscriptions/:id/update-status', updateSubscriptionStatus);
+
+// sales pages
+app.post('/api/sales-pages/save', saveSalesPage);
+app.get('/api/sales-pages', getSalesPages);
+app.post('/api/sales-pages/create-payment', createSalesPagePayment);
+app.get('/api/sales-pages/:id/orders', getSalesPageOrders);
+app.get('/api/sales-pages/:id', getSalesPageById);
+app.post('/api/sales-pages/:id', updateSalesPageStatus);
 
 // settings
 app.get('/api/settings/:id', getSettings);

@@ -132,6 +132,36 @@ export const emailVerificationTokensInApp = app.table("email_verification_tokens
 		}).onDelete("cascade"),
 ]);
 
+export const salesPagesInApp = app.table("sales_pages", {
+	id: serial().notNull(),
+	userid: integer().notNull(),
+	title: varchar({ length: 255 }).notNull(),
+	description: text(),
+	price: numeric({ precision: 10, scale: 2 }).notNull(),
+	currency: varchar({ length: 3 }).notNull(),
+	language: varchar({ length: 15 }).default('English'),
+	frequency: varchar({ length: 50 }).default('One-time payment').notNull(),
+	image_url: varchar({ length: 255 }),
+	notes: text(),
+	accept_credit_cards: boolean().default(false).notNull(),
+	accept_paypal: boolean().default(false).notNull(),
+	discount: numeric({ precision: 5, scale: 2 }),
+	sales_tax_name: varchar({ length: 100 }),
+	sales_tax_rate: numeric({ precision: 5, scale: 2 }),
+	second_tax_name: varchar({ length: 100 }),
+	second_tax_rate: numeric({ precision: 5, scale: 2 }),
+	status: varchar({ length: 15 }).default('Draft'),
+	created_at: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+	updated_at: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+	foreignKey({
+		columns: [table.userid],
+		foreignColumns: [usersInApp.userid],
+		name: "sales_pages_userid_fkey"
+	}).onDelete("cascade"),
+]);
+
+
 // Export original names for backward compatibility
 export const users = usersInApp;
 export const clients = clientsInApp;
@@ -139,3 +169,4 @@ export const logs = logsInApp;
 export const subscriptions = subscriptionsInApp;
 export const invoices = invoicesInApp;
 export const emailVerificationTokens = emailVerificationTokensInApp;
+export const salesPages = salesPagesInApp;
