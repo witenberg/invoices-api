@@ -2,6 +2,7 @@ import { Context } from 'hono';
 import { stripe } from '../../../config/stripe';
 import { createDB, schema } from '../../../db/db';
 import { eq } from 'drizzle-orm';
+import Stripe from 'stripe';
 
 export async function POST(c: Context) {
   // Get the raw body as a string
@@ -15,13 +16,11 @@ export async function POST(c: Context) {
   let event;
 
   try {
-    // Use connect parameter to handle events from connected accounts
-    event = await stripe.webhooks.constructEventAsync(
+    // Use synchronous version for webhook verification
+    event = stripe.webhooks.constructEvent(
       rawBody,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!,
-      undefined,
-      { connect: true }
+      process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (error) {
     console.log(error)
@@ -29,6 +28,9 @@ export async function POST(c: Context) {
   }
 
   const db = createDB();
+
+  // For Connect account events, we need to check the account property
+  const isConnectEvent = 'account' in event && event.account;
 
   switch (event.type) {
     case 'account.updated': {
@@ -55,10 +57,10 @@ export async function POST(c: Context) {
     }
 
     case 'checkout.session.completed': {
-      const session = event.data.object;
+      const session = event.data.object as Stripe.Checkout.Session;
       const invoiceId = session.metadata?.invoiceId;
 
-      if (invoiceId) {
+      if (invoiceId && isConnectEvent) {
         // Update invoice status to paid
         await db.update(schema.invoices)
           .set({ status: 'Paid' })
@@ -68,10 +70,10 @@ export async function POST(c: Context) {
     }
 
     case 'checkout.session.expired': {
-      const session = event.data.object;
+      const session = event.data.object as Stripe.Checkout.Session;
       const invoiceId = session.metadata?.invoiceId;
 
-      if (invoiceId) {
+      if (invoiceId && isConnectEvent) {
         // Keep invoice as 'Sent' when session expires
         await db.update(schema.invoices)
           .set({ status: 'Sent' })
