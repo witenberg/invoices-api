@@ -9,30 +9,34 @@ export async function POST(c: Context) {
       return c.json({ error: 'Missing required fields' }, 400);
     }
 
-    const paymentLink = await stripe.paymentLinks.create({
-      line_items: [
-        {
-          price_data: {
-            currency,
-            product_data: {
-              name: 'Invoice Payment',
+    const session = await stripe.checkout.sessions.create(
+      {
+        payment_method_types: ['card'],
+        mode: 'payment',
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency,
+              unit_amount: amount,
+              product_data: {
+                name: `Invoice #${invoiceId}`,
+              },
             },
-            unit_amount: amount,
           },
-          quantity: 1,
-        },
-      ],
-      payment_intent_data: {
-        transfer_data: {
-          destination: accountId,
-        },
+        ],
+        success_url: `${process.env.APP_URL}/invoices/${invoiceId}?status=success`,
+        cancel_url: `${process.env.APP_URL}/invoices/${invoiceId}?status=cancelled`,
         metadata: {
           invoiceId: invoiceId.toString()
         },
       },
-    });
+      {
+        stripeAccount: accountId
+      }
+    );
 
-    return c.json({ url: paymentLink.url });
+    return c.json({ url: session.url });
   } catch (error) {
     console.error('[STRIPE_CREATE_PAYMENT_ERROR]', error);
     return c.json({ error: 'Internal Error' }, 500);

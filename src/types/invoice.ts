@@ -53,7 +53,9 @@ export interface InvoiceToEdit {
   date: string
   notes?: string
   discount?: number
+  salestaxname?: string
   salestax?: number
+  secondtaxname?: string
   secondtax?: number
   acceptcreditcards: boolean
   acceptpaypal: boolean

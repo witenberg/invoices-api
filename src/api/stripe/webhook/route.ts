@@ -4,7 +4,8 @@ import { createDB, schema } from '../../../db/db';
 import { eq } from 'drizzle-orm';
 
 export async function POST(c: Context) {
-  const body = await c.req.text();
+  // Get the raw body as a string
+  const rawBody = await c.req.raw.text();
   const signature = c.req.header('Stripe-Signature');
 
   if (!signature) {
@@ -14,10 +15,13 @@ export async function POST(c: Context) {
   let event;
 
   try {
+    // Use connect parameter to handle events from connected accounts
     event = await stripe.webhooks.constructEventAsync(
-      body,
+      rawBody,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      process.env.STRIPE_WEBHOOK_SECRET!,
+      undefined,
+      { connect: true }
     );
   } catch (error) {
     console.log(error)
@@ -50,28 +54,27 @@ export async function POST(c: Context) {
       break;
     }
 
-    case 'payment_intent.succeeded': {
-      const paymentIntent = event.data.object;
-      const invoiceId = paymentIntent.metadata?.invoiceId;
+    case 'checkout.session.completed': {
+      const session = event.data.object;
+      const invoiceId = session.metadata?.invoiceId;
 
       if (invoiceId) {
         // Update invoice status to paid
         await db.update(schema.invoices)
           .set({ status: 'Paid' })
           .where(eq(schema.invoices.invoiceid, parseInt(invoiceId)));
-
       }
       break;
     }
 
-    case 'payment_intent.payment_failed': {
-      const paymentIntent = event.data.object;
-      const invoiceId = paymentIntent.metadata?.invoiceId;
+    case 'checkout.session.expired': {
+      const session = event.data.object;
+      const invoiceId = session.metadata?.invoiceId;
 
       if (invoiceId) {
-        // Update invoice status to indicate payment failure
+        // Keep invoice as 'Sent' when session expires
         await db.update(schema.invoices)
-          .set({ status: 'Sent' }) // Reset to Sent status if payment fails
+          .set({ status: 'Sent' })
           .where(eq(schema.invoices.invoiceid, parseInt(invoiceId)));
       }
       break;

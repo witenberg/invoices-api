@@ -26,7 +26,7 @@ export async function GET(c: Context) {
         const user = await db.query.users.findFirst({
             where: eq(schema.users.userid, invoice.userid),
             columns: {
-                username: true
+                username: true,
             }
         });
 
@@ -50,13 +50,28 @@ export async function GET(c: Context) {
         const username = user.username;
         const client_name = client.name;
 
-        const total = (products as any[])
+        // Calculate subtotal
+        const subtotal = (products as any[])
             .reduce((sum, product) => {
                 const price = parseFloat(product.amount) || 0;
                 const quantity = product.quantity || 1;
                 return sum + price * quantity;
-            }, 0)
-            .toFixed(2);
+            }, 0);
+
+        // Calculate discount
+        const discount = invoice.discount ? parseFloat(invoice.discount.toString()) : 0;
+        const discountAmount = (subtotal * discount) / 100;
+        const afterDiscount = subtotal - discountAmount;
+
+        // Calculate taxes
+        const salestax = invoice.salestax ? parseFloat(invoice.salestax.toString()) : 0;
+        const secondtax = invoice.secondtax ? parseFloat(invoice.secondtax.toString()) : 0;
+        
+        const salestaxAmount = (afterDiscount * salestax) / 100;
+        const secondtaxAmount = (afterDiscount * secondtax) / 100;
+
+        // Calculate total
+        const total = afterDiscount + salestaxAmount + secondtaxAmount;
 
         const formattedDate = new Date(date).toLocaleDateString('en-US', {
             month: 'long',
@@ -119,13 +134,52 @@ export async function GET(c: Context) {
             yPosition += 10;
         });
 
+        // Subtotal
+        yPosition += 5;
+        doc.setFontSize(12);
+        doc.text('SUBTOTAL', 130, yPosition);
+        doc.text(subtotal.toFixed(2), 160, yPosition);
+
+        // Discount if applicable
+        if (discount > 0) {
+            yPosition += 7;
+            doc.text(`DISCOUNT - ${discount}%`, 130, yPosition);
+            doc.text(`-${discountAmount.toFixed(2)}`, 160, yPosition);
+            
+            yPosition += 7;
+            doc.text('AFTER DISCOUNT', 130, yPosition);
+            doc.text(afterDiscount.toFixed(2), 160, yPosition);
+        }
+
+        // Sales tax if applicable
+        if (salestax > 0) {
+            yPosition += 7;
+            doc.text(`${invoice.salestaxname || 'TAX'} - ${salestax}%`, 130, yPosition);
+            doc.text(salestaxAmount.toFixed(2), 160, yPosition);
+        }
+
+        // Second tax if applicable
+        if (secondtax > 0) {
+            yPosition += 7;
+            doc.text(`${invoice.secondtaxname || 'SECOND_TAX'} - ${secondtax}%`, 130, yPosition);
+            doc.text(secondtaxAmount.toFixed(2), 160, yPosition);
+        }
+
         // Total
+        yPosition += 10;
         doc.setFillColor(240, 240, 240);
-        doc.rect(20, yPosition, 170, 10, 'F');
+        doc.rect(20, yPosition - 5, 170, 10, 'F');
         
         doc.setFontSize(12);
-        doc.text('TOTAL', 25, yPosition + 7);
-        doc.text(`${currency} ${total}`, 160, yPosition + 7);
+        doc.text('TOTAL', 130, yPosition);
+        doc.text(total.toFixed(2), 160, yPosition);
+
+        // Amount Due
+        yPosition += 20;
+        doc.setFontSize(14);
+        doc.text('AMOUNT DUE', 20, yPosition);
+        doc.setFontSize(16);
+        doc.text(`${currency} ${total.toFixed(2)}`, 160, yPosition);
 
         // Footer
         doc.setFontSize(10);
