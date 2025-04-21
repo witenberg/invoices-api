@@ -3,6 +3,7 @@ import { stripe } from '../../../config/stripe';
 import { createDB, schema } from '../../../db/db';
 import { eq } from 'drizzle-orm';
 import Stripe from 'stripe';
+import crypto from 'crypto';
 
 export async function POST(c: Context) {
   // Get the raw body as a string
@@ -16,20 +17,20 @@ export async function POST(c: Context) {
   let event;
 
   try {
-    // Use synchronous version for webhook verification
-    event = stripe.webhooks.constructEvent(
+    // Manual verification of webhook signature
+    event = await verifyStripeWebhook(
       rawBody,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (error) {
-    console.log(error)
+    console.error('Webhook signature verification error:', error);
     return c.json({ error: `Webhook Error: ${error instanceof Error ? error.message : 'Unknown error'}` }, 400);
   }
 
   const db = createDB();
 
-  // For Connect account events, we need to check the account property
+  // For Connect account events, check the account property
   const isConnectEvent = 'account' in event && event.account;
 
   switch (event.type) {
@@ -57,10 +58,11 @@ export async function POST(c: Context) {
     }
 
     case 'checkout.session.completed': {
-      const session = event.data.object as Stripe.Checkout.Session;
+      const session = event.data.object;
       const invoiceId = session.metadata?.invoiceId;
 
       if (invoiceId && isConnectEvent) {
+        console.log(`Updating invoice ${invoiceId} to Paid status from connected account ${event.account}`);
         // Update invoice status to paid
         await db.update(schema.invoices)
           .set({ status: 'Paid' })
@@ -70,10 +72,11 @@ export async function POST(c: Context) {
     }
 
     case 'checkout.session.expired': {
-      const session = event.data.object as Stripe.Checkout.Session;
+      const session = event.data.object;
       const invoiceId = session.metadata?.invoiceId;
 
       if (invoiceId && isConnectEvent) {
+        console.log(`Keeping invoice ${invoiceId} as Sent after session expiration from connected account ${event.account}`);
         // Keep invoice as 'Sent' when session expires
         await db.update(schema.invoices)
           .set({ status: 'Sent' })
@@ -84,4 +87,53 @@ export async function POST(c: Context) {
   }
 
   return c.json({ received: true });
+}
+
+/**
+ * Manually verify the Stripe webhook signature
+ */
+async function verifyStripeWebhook(
+  payload: string,
+  signature: string,
+  secret: string
+): Promise<Stripe.Event> {
+  // Parse the signature
+  const signatureParts = signature
+    .split(',')
+    .reduce<Record<string, string>>((acc, part) => {
+      const [key, value] = part.split('=');
+      if (key && value) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+
+  if (!signatureParts.t || !signatureParts.v1) {
+    throw new Error('Invalid signature format');
+  }
+
+  // Create the signature verification string
+  const timestampedPayload = `${signatureParts.t}.${payload}`;
+  
+  // Compute the expected signature
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(timestampedPayload)
+    .digest('hex');
+
+  // Compare the expected signature with the one from the header
+  if (expectedSignature !== signatureParts.v1) {
+    throw new Error('Signature verification failed');
+  }
+
+  // Check timestamp (within 5 minutes)
+  const timestamp = parseInt(signatureParts.t);
+  const now = Math.floor(Date.now() / 1000);
+  
+  if (now - timestamp > 300) {
+    throw new Error('Timestamp outside the tolerance zone');
+  }
+
+  // If we got here, the signature is valid
+  return JSON.parse(payload) as Stripe.Event;
 } 
