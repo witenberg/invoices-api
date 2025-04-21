@@ -68,7 +68,9 @@ export const subscriptionsInApp = app.table("subscriptions", {
 	notes: text(),
 	discount: numeric({ precision: 10, scale:  2 }),
 	salestax: numeric({ precision: 10, scale:  2 }),
+	salestaxname: varchar({ length: 255 }),
 	secondtax: numeric({ precision: 10, scale:  2 }),
+	secondtaxname: varchar({ length: 255 }),
 	acceptcreditcards: boolean().default(false).notNull(),
 	acceptpaypal: boolean().default(false).notNull(),
 	startDate: date("start_date").notNull(),
@@ -77,6 +79,7 @@ export const subscriptionsInApp = app.table("subscriptions", {
 	status: varchar({ length: 20 }).notNull(),
 	nextInvoice: date("next_invoice"),
 	products: jsonb().default([]).notNull(),
+	total: numeric({ precision: 10, scale: 2 }),
 }, (table) => [
 	foreignKey({
 			columns: [table.clientid],

@@ -25,6 +25,43 @@ export async function POST(c: Context) {
       nextInvoice = sub.start_date
     }
 
+    // Convert products to the format needed for DB storage
+    const products = sub.invoicePrototype.products.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      amount: item.amount ? item.amount.toString() : "0",
+      quantity: item.quantity ? item.quantity.toString() : "1"
+    }));
+
+    // Calculate total from products
+    let subtotal = 0;
+    products.forEach((product: any) => {
+      const amount = parseFloat(product.amount);
+      const quantity = parseInt(product.quantity);
+      subtotal += amount * quantity;
+    });
+
+    // Apply discount if exists
+    const discountRate = sub.invoicePrototype.discount 
+      ? parseFloat(sub.invoicePrototype.discount.toString()) / 100 
+      : 0;
+    let total = subtotal * (1 - discountRate);
+
+    // Apply sales tax if exists
+    const salesTaxRate = sub.invoicePrototype.salestax 
+      ? parseFloat(sub.invoicePrototype.salestax.toString()) / 100 
+      : 0;
+    total = total * (1 + salesTaxRate);
+
+    // Apply second tax if exists
+    const secondTaxRate = sub.invoicePrototype.secondtax 
+      ? parseFloat(sub.invoicePrototype.secondtax.toString()) / 100 
+      : 0;
+    total = total * (1 + secondTaxRate);
+
+    // Round to 2 decimal places
+    total = Math.round(total * 100) / 100;
+
     // Transform the subscription data to match the database schema
     const subscriptionData = {
       userid: parseInt(sub.invoicePrototype.userid.toString()),
@@ -35,19 +72,17 @@ export async function POST(c: Context) {
       notes: sub.invoicePrototype.notes || null,
       discount: sub.invoicePrototype.discount ? sub.invoicePrototype.discount.toString() : null,
       salestax: sub.invoicePrototype.salestax ? sub.invoicePrototype.salestax.toString() : null,
+      salestaxname: sub.invoicePrototype.salestaxname || null,
       secondtax: sub.invoicePrototype.secondtax ? sub.invoicePrototype.secondtax.toString() : null,
+      secondtaxname: sub.invoicePrototype.secondtaxname || null,
       acceptcreditcards: Boolean(sub.invoicePrototype.acceptcreditcards),
       acceptpaypal: Boolean(sub.invoicePrototype.acceptpaypal),
       startDate: sub.start_date,
       frequency: sub.frequency,
       endDate: sub.end_date || null,
       nextInvoice: nextInvoice,
-      products: sub.invoicePrototype.products.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        amount: item.amount ? item.amount.toString() : "0",
-        quantity: item.quantity ? item.quantity.toString() : "1"
-      }))
+      products: products,
+      total: total.toString()
     };
 
     let savedSubId: number;
@@ -81,12 +116,15 @@ export async function POST(c: Context) {
             notes: subscriptionData.notes,
             discount: subscriptionData.discount,
             salestax: subscriptionData.salestax,
+            salestaxname: subscriptionData.salestaxname,
             secondtax: subscriptionData.secondtax,
+            secondtaxname: subscriptionData.secondtaxname,
             acceptcreditcards: subscriptionData.acceptcreditcards,
             acceptpaypal: subscriptionData.acceptpaypal,
             date: today, // Use today's date string
             subscriptionid: savedSubId, // Link to the saved subscription
-            products: subscriptionData.products // Use already formatted products
+            products: subscriptionData.products, // Use already formatted products
+            total: subscriptionData.total // Use the same calculated total
         };
 
         // Insert invoice directly into the database

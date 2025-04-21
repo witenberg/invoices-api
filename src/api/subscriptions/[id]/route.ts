@@ -44,14 +44,14 @@ export async function GET(c: Context) {
              return c.json({ error: 'Client associated with subscription not found' }, 404);
         }
         
-        // Calculate total from products array
-        const products = (subscription.products || []) as any[]; // Default to empty array
-        const total = products.reduce((sum, product) => {
-            // Ensure amount and quantity are treated as numbers for calculation
-            const amount = parseFloat(product.amount || '0');
-            const quantity = parseInt(product.quantity || '1', 10);
-            return sum + (amount * quantity);
-        }, 0);
+        // Get products from the subscription
+        const products = (subscription.products || []) as any[];
+        
+        // Use stored total or default to 0
+        let total = 0;
+        if (subscription.total !== null && subscription.total !== undefined) {
+            total = Number(subscription.total);
+        }
 
         // Construct the response data, ensuring types match the frontend expectations
         const subData = {
@@ -66,14 +66,17 @@ export async function GET(c: Context) {
             notes: subscription.notes || undefined,
             discount: subscription.discount ? Number(subscription.discount) : undefined,
             salestax: subscription.salestax ? Number(subscription.salestax) : undefined,
+            salestaxname: subscription.salestaxname || undefined,
             secondtax: subscription.secondtax ? Number(subscription.secondtax) : undefined,
+            secondtaxname: subscription.secondtaxname || undefined,
             acceptcreditcards: subscription.acceptcreditcards, // Already boolean
             acceptpaypal: subscription.acceptpaypal, // Already boolean
+            client_id: subscription.clientid,
             client_name: client.name, // Use data from separate client query
             client_email: client.email,
             client_address: client.address || undefined,
             products: products, // Pass the parsed products array
-            total: total, // Add calculated total
+            total: total, // Use stored total from database
             total_invoices: totalInvoices // Add invoice count
         };
 

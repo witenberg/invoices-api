@@ -124,7 +124,7 @@ app.get('/api/subscriptions', getSubscriptions);
 app.post('/api/subscriptions/save', saveSubscription);
 app.get('/api/subscriptions/:id', getSubscriptionById);
 app.get('/api/subscriptions/:id/edit', getSubscriptionEdit);
-app.post('/api/subscriptions/:id/update-status', updateSubscriptionStatus);
+app.put('/api/subscriptions/:id/update-status', updateSubscriptionStatus);
 
 // sales pages
 app.post('/api/sales-pages/save', saveSalesPage);

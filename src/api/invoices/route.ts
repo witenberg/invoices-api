@@ -6,8 +6,9 @@ export async function GET(c: Context) {
   const userId = c.req.query('userId');
   const status = c.req.query('status');
   const subId = c.req.query('subId') ? parseInt(c.req.query('subId')!) : null;
+  const clientId = c.req.query('clientId') ? parseInt(c.req.query('clientId')!) : null;
 
-  console.log(userId, status, subId);
+  console.log(userId, status, subId, clientId);
 
   if (!userId) {
     return c.json({ error: "User ID is required" }, 400);
@@ -31,7 +32,8 @@ export async function GET(c: Context) {
     .where(and(
       eq(schema.invoices.userid, parseInt(userId)),
       ...(status ? [eq(schema.invoices.status, status)] : []),
-      ...(subId ? [eq(schema.invoices.subscriptionid, subId)] : [])
+      ...(subId ? [eq(schema.invoices.subscriptionid, subId)] : []),
+      ...(clientId ? [eq(schema.invoices.clientid, clientId)] : [])
     ))
     .orderBy(schema.invoices.date);
 

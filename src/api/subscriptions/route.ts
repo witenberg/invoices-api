@@ -5,7 +5,8 @@ import { eq, and } from 'drizzle-orm';
 export async function GET(c: Context) {
   const userId = c.req.query('userId');
   const status = c.req.query('status');
-
+  const clientId = c.req.query('clientId');
+  console.log(userId, status, clientId);
   if (!userId) {
     return c.json({ error: "User ID is required" }, 400);
   }
@@ -18,7 +19,9 @@ export async function GET(c: Context) {
     if (status) {
       whereClause.push(eq(schema.subscriptions.status, status));
     }
-    
+    if (clientId) {
+      whereClause.push(eq(schema.subscriptions.clientid, parseInt(clientId)));
+    }
     // Fetch subscriptions
     const subscriptions = await db.query.subscriptions.findMany({
       where: and(...whereClause),
@@ -38,25 +41,36 @@ export async function GET(c: Context) {
     // Create a map of client IDs to names for quick lookup
     const clientMap = new Map(clients.map(client => [client.clientid, client.name]));
     
-    // Process subscriptions to include client names and calculate totals
-    const subscriptionsWithTotal = subscriptions.map(subscription => {
-      const products = subscription.products as any[];
-      const total = products.reduce((sum, product) => {
-        return sum + (Number(product.amount) * (Number(product.quantity) || 1));
-      }, 0);
-      
+    // Process subscriptions to include client names
+    const processedSubscriptions = subscriptions.map(subscription => {
+      // Convert total to string safely
+      let totalValue = "0.00";
+      if (subscription.total !== null && subscription.total !== undefined) {
+        // Handle the never type by first checking existence
+        totalValue = String(subscription.total);
+      }
+
+      // Format next invoice date safely
+      let nextInvoiceDate = null;
+      if (subscription.nextInvoice) {
+        nextInvoiceDate = subscription.nextInvoice.toString().split('T')[0];
+      }
+
       return {
         subscriptionid: subscription.subscriptionid,
         status: subscription.status,
         currency: subscription.currency,
-        total: total.toFixed(2),
+        total: totalValue,
+        client_id: subscription.clientid,
         client_name: clientMap.get(subscription.clientid) || 'Unknown Client',
-        next_invoice: subscription.nextInvoice ? subscription.nextInvoice.toString().split('T')[0] : null,
-        frequency: subscription.frequency
+        next_invoice: nextInvoiceDate,
+        frequency: subscription.frequency,
+        salestaxname: subscription.salestaxname || null,
+        secondtaxname: subscription.secondtaxname || null
       };
     });
 
-    return c.json(subscriptionsWithTotal);
+    return c.json(processedSubscriptions);
   } catch (error) {
     console.error("Error fetching subscriptions:", error);
     return c.json({ error: "Internal Server Error" }, 500);

@@ -71,7 +71,9 @@ export async function GET(c: Context) {
                 notes: subscriptionFromDb.notes || undefined,
                 // Convert DB strings back to numbers for the frontend type
                 discount: subscriptionFromDb.discount ? Number(subscriptionFromDb.discount) : undefined,
+                salestaxname: subscriptionFromDb.salestaxname || undefined,
                 salestax: subscriptionFromDb.salestax ? Number(subscriptionFromDb.salestax) : undefined,
+                secondtaxname: subscriptionFromDb.secondtaxname || undefined,
                 secondtax: subscriptionFromDb.secondtax ? Number(subscriptionFromDb.secondtax) : undefined,
                 acceptcreditcards: subscriptionFromDb.acceptcreditcards,
                 acceptpaypal: subscriptionFromDb.acceptpaypal,
