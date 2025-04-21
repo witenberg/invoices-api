@@ -12,6 +12,29 @@ export async function POST(c: Context) {
     const db = createDB();
     let invoiceid = invoice.invoiceid ? parseInt(invoice.invoiceid.toString()) : undefined;
 
+    // Calculate total amount from products
+    let subtotal = 0;
+    invoice.items.forEach((item: InvoiceItem) => {
+      const amount = item.amount ? parseFloat(item.amount.toString()) : 0;
+      const quantity = item.quantity ? parseInt(item.quantity.toString()) : 1;
+      subtotal += amount * quantity;
+    });
+
+    // Apply discount if exists
+    const discountRate = invoice.options.discount ? parseFloat(invoice.options.discount.toString()) / 100 : 0;
+    let total = subtotal * (1 - discountRate);
+
+    // Apply sales tax if exists
+    const salesTaxRate = invoice.options.salestax?.rate ? parseFloat(invoice.options.salestax.rate.toString()) / 100 : 0;
+    total = total * (1 + salesTaxRate);
+
+    // Apply second tax if exists
+    const secondTaxRate = invoice.options.secondtax?.rate ? parseFloat(invoice.options.secondtax.rate.toString()) / 100 : 0;
+    total = total * (1 + secondTaxRate);
+
+    // Round to 2 decimal places
+    total = Math.round(total * 100) / 100;
+
     const invoiceData = {
       userid: parseInt(invoice.userid.toString()),
       clientid: parseInt(invoice.clientid.toString()),
@@ -33,7 +56,8 @@ export async function POST(c: Context) {
         name: item.name,
         amount: item.amount ? parseFloat(item.amount.toString()) : 0,
         quantity: item.quantity ? parseInt(item.quantity.toString()) : 1
-      }))
+      })),
+      total: total.toString()
     };
 
     let savedInvoiceId: number | undefined = invoiceid;

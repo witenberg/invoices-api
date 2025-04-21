@@ -16,10 +16,15 @@ export async function GET(c: Context) {
   try {
     const db = createDB();
     const invoices = await db.select({
-      invoice: schema.invoices,
-      client: {
-        name: schema.clients.name
-      }
+      invoiceid: schema.invoices.invoiceid,
+      userid: schema.invoices.userid,
+      clientid: schema.invoices.clientid,
+      status: schema.invoices.status,
+      date: schema.invoices.date,
+      currency: schema.invoices.currency,
+      subscriptionid: schema.invoices.subscriptionid,
+      total: schema.invoices.total,
+      client_name: schema.clients.name
     })
     .from(schema.invoices)
     .leftJoin(schema.clients, eq(schema.invoices.clientid, schema.clients.clientid))
@@ -30,21 +35,7 @@ export async function GET(c: Context) {
     ))
     .orderBy(schema.invoices.date);
 
-    // Calculate total for each invoice
-    const invoicesWithTotal = invoices.map(({ invoice, client }) => {
-      const products = invoice.products as any[];
-      const total = products.reduce((sum, product) => {
-        return sum + (product.amount * product.quantity);
-      }, 0);
-
-      return {
-        ...invoice,
-        client_name: client?.name,
-        total
-      };
-    });
-
-    return c.json(invoicesWithTotal);
+    return c.json(invoices);
   } catch (error) {
     console.error("Error fetching invoices: ", error);
     return c.json({ error: "Internal Server Error" }, 500);

@@ -108,6 +108,7 @@ export const invoicesInApp = app.table("invoices", {
 	acceptpaypal: boolean().default(false),
 	subscriptionid: integer(),
 	products: jsonb().default([]).notNull(),
+	total: numeric({ precision: 10, scale: 2 }),
 }, (table) => [
 	foreignKey({
 			columns: [table.clientid],

@@ -9,7 +9,7 @@ import { GET as getInvoiceView } from './api/invoices/[id]/view/route';
 import { POST as saveInvoice } from './api/invoices/save/route';
 import { POST as sendInvoiceEmail } from './api/invoices/[id]/send/route';
 import { GET as generateInvoicePDF } from './api/invoices/[id]/generate-pdf/route';
-
+import { GET as getInvoicePayments } from './api/invoices/[id]/payments/route';
 // reports
 import { GET as getInvoicesReport } from './api/reports/invoices/route';
 import { GET as getPaymentsReport } from './api/reports/payments/route';
@@ -104,6 +104,7 @@ app.get('/api/invoices/:id/view', getInvoiceView);
 app.post('/api/invoices/save', saveInvoice);
 app.post('/api/invoices/:id/send', sendInvoiceEmail);
 app.get('/api/invoices/:id/generate-pdf', generateInvoicePDF);
+app.get('/api/invoices/:id/payments', getInvoicePayments);
 
 // Reports routes
 app.get('/api/reports/invoices', getInvoicesReport);

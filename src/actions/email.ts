@@ -53,35 +53,42 @@ export async function sendInvoiceEmail(invoiceid: string) {
     }
 
     const products = invoice.products as any[];
-    const total = products.reduce(
-      (sum, product) => sum + (parseFloat(product.amount) * (product.quantity || 1)),
-      0
-    );
+    const total = Number(invoice.total);
+
+    // Extract discount and tax information if available
+    const discount = invoice.discount ? Number(invoice.discount) : 0;
+    const salesTax = invoice.salestax ? Number(invoice.salestax) : 0;
+    const secondTax = invoice.secondtax ? Number(invoice.secondtax) : 0;
+    const salesTaxName = invoice.salestaxname || "Sales Tax";
+    const secondTaxName = invoice.secondtaxname || "Additional Tax";
 
     const client_email = client.email;
     const user_name = user.username;
     const currency = invoice.currency;
     const invoiceUrl = `${process.env.APP_URL}/invoices/${invoiceid}`;
 
+    // Create a summary of invoice items for the description
+    const itemsSummary = products.map(product => 
+      `${product.name} x${product.quantity || 1}: ${currency} ${(parseFloat(product.amount) * (product.quantity || 1)).toFixed(2)}`
+    ).join('\n');
+
     let paymentUrl = '';
     if (user.stripeConnected && user.stripeAccountid) {
       try {
-        // Tworzymy line_items dla każdego produktu
-        const line_items = products.map(product => ({
-          price_data: {
-            currency: currency.toLowerCase(),
-            unit_amount: Math.round(parseFloat(product.amount) * 100),
-            product_data: {
-              name: product.name,
-            },
-          },
-          quantity: product.quantity || 1,
-        }));
-
-        // Tworzymy sesję checkout bezpośrednio na koncie połączonego użytkownika
+        // Create a session with the exact total amount
         const session = await stripe.checkout.sessions.create({
           payment_method_types: ['card'],
-          line_items: line_items,
+          line_items: [{
+            price_data: {
+              currency: currency.toLowerCase(),
+              unit_amount: Math.round(total * 100), // Use exact total amount
+              product_data: {
+                name: `Invoice #${invoiceid}`,
+                description: `Payment for invoice #${invoiceid}\n\n${itemsSummary}${discount > 0 ? `\nDiscount: ${discount}%` : ''}${salesTax > 0 ? `\n${salesTaxName}: ${salesTax}%` : ''}${secondTax > 0 ? `\n${secondTaxName}: ${secondTax}%` : ''}`,
+              },
+            },
+            quantity: 1,
+          }],
           mode: 'payment',
           success_url: `${process.env.APP_URL}/invoices/${invoiceid}?payment=success`,
           cancel_url: `${process.env.APP_URL}/invoices/${invoiceid}?payment=cancelled`,
@@ -93,7 +100,10 @@ export async function sendInvoiceEmail(invoiceid: string) {
             metadata: {
               invoiceId: invoiceid.toString(),
               userId: invoice.userid.toString(),
-              destinationAccount: user.stripeAccountid
+              destinationAccount: user.stripeAccountid,
+              discount: discount.toString(),
+              salesTax: salesTax.toString(),
+              secondTax: secondTax.toString()
             },
           }
         });
@@ -113,6 +123,18 @@ export async function sendInvoiceEmail(invoiceid: string) {
         Pay Now
       </a>
     ` : '';
+
+    // Create breakdown HTML for taxes and discount if applicable
+    // let breakdownHtml = '';
+    // if (discount > 0 || salesTax > 0 || secondTax > 0) {
+    //   breakdownHtml = `
+    //     <div style="font-size: 14px; color: #666; margin-top: 5px;">
+    //       ${discount > 0 ? `<p>Includes ${discount}% discount</p>` : ''}
+    //       ${salesTax > 0 ? `<p>Includes ${salesTaxName} (${salesTax}%)</p>` : ''}
+    //       ${secondTax > 0 ? `<p>Includes ${secondTaxName} (${secondTax}%)</p>` : ''}
+    //     </div>
+    //   `;
+    // }
 
     // Send email using Resend
     const { data, error } = await resend.emails.send({
