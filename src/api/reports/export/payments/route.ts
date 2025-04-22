@@ -2,6 +2,7 @@ import { Context } from 'hono';
 import { createDB, schema } from '../../../../db/db';
 import { stripe } from '../../../../config/stripe';
 import { eq } from 'drizzle-orm';
+import { toUTCDateString } from '../../../../utils/dateUtils';
 
 export async function POST(c: Context) {
   const db = createDB();

@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import type { Invoice } from '../../../types/invoice';
 import { InvoiceItem } from '../../../types/invoiceItem';
 import { sendInvoiceEmail } from '../../../actions/email';
+import { getCurrentDateUTC, toUTCDateString } from '../../../utils/dateUtils';
 
 export async function POST(c: Context) {
   try {
@@ -41,7 +42,7 @@ export async function POST(c: Context) {
       status: invoice.status,
       currency: invoice.options.currency,
       language: invoice.options.language,
-      date: invoice.options.date || new Date().toISOString().split("T")[0],
+      date: invoice.options.date ? toUTCDateString(invoice.options.date) : getCurrentDateUTC(),
       notes: invoice.options.notes || null,
       discount: invoice.options.discount ? invoice.options.discount.toString() : null,
       salestax: invoice.options.salestax?.rate ? invoice.options.salestax.rate.toString() : null,
@@ -78,7 +79,8 @@ export async function POST(c: Context) {
       }
     }
 
-    if (invoice.options.date === new Date().toISOString().split("T")[0] && savedInvoiceId && invoice.status === 'Sent') {
+    const currentDate = getCurrentDateUTC();
+    if (invoice.options.date === currentDate && savedInvoiceId && invoice.status === 'Sent') {
       await sendInvoiceEmail(savedInvoiceId.toString());
     }
 

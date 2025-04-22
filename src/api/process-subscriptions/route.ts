@@ -1,12 +1,13 @@
 import { Context } from 'hono';
 import { createDB, schema } from '../../db/db';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNull, lte } from 'drizzle-orm';
+import type { SubscriptionFrequency } from '../../types/subscription';
 import { getNextSubscriptionDate } from '../../actions/subscriptions';
+import { getCurrentDateUTC, toUTCDateString } from '../../utils/dateUtils';
 import { sendInvoiceEmail } from '../../actions/email';
-import { SubscriptionFrequency } from '../../types/subscription';
 
 export async function POST(c: Context) {
-    const today_date = new Date().toISOString().split("T")[0];
+    const today_date = getCurrentDateUTC();
 
     try {
         const db = createDB();

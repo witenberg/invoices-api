@@ -3,6 +3,7 @@ import { createDB, schema } from '../../../db/db';
 import { and, eq, or, gte } from 'drizzle-orm';
 import { format, subMonths } from 'date-fns';
 import { sql } from 'drizzle-orm';
+import { toUTCDateString } from '../../../utils/dateUtils';
 
 export async function GET(c: Context) {
   const db = createDB();
@@ -86,10 +87,10 @@ export async function GET(c: Context) {
     const twelveMonthsAgo = new Date(today.getFullYear() - 1, today.getMonth(), 1);
 
     // Convert dates to ISO strings for PostgreSQL
-    const startOfMonthStr = startOfMonth.toISOString().split('T')[0];
-    const startOfLastMonthStr = startOfLastMonth.toISOString().split('T')[0];
-    const threeMonthsAgoStr = threeMonthsAgo.toISOString().split('T')[0];
-    const twelveMonthsAgoStr = twelveMonthsAgo.toISOString().split('T')[0];
+    const startOfMonthStr = toUTCDateString(startOfMonth);
+    const startOfLastMonthStr = toUTCDateString(startOfLastMonth);
+    const threeMonthsAgoStr = toUTCDateString(threeMonthsAgo);
+    const twelveMonthsAgoStr = toUTCDateString(twelveMonthsAgo);
 
     // Helper function to calculate total from products JSONB
     const totalCalculation = sql<number>`
