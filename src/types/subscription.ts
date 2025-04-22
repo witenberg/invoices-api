@@ -1,4 +1,4 @@
-import { Currency } from "@/constants/options";
+import { Currency } from "../constants/options";
 import { InvoicePrototype } from "./invoice";
 
 export type SubscriptionStatus = 'Active' | 'Paused' | 'Deleted';

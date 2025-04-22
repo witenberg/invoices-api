@@ -73,7 +73,7 @@ export async function sendInvoiceEmail(invoiceid: string) {
     ).join('\n');
 
     let paymentUrl = '';
-    if (user.stripeConnected && user.stripeAccountid) {
+    if (invoice.acceptcreditcards && user.stripeConnected && user.stripeAccountid) {
       try {
         // Create a session with the exact total amount
         const session = await stripe.checkout.sessions.create({

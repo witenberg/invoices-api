@@ -17,12 +17,29 @@ export async function POST(c: Context) {
 
     const db = createDB();
     let subid = sub.subscriptionid ? parseInt(sub.subscriptionid.toString()) : undefined;
+    const isEditMode = !!subid;  // Sprawdzamy, czy jest to edycja istniejącej subskrypcji
+    
     let nextInvoice: string;
+    let shouldCreateInvoice = false;
 
-    if (sub.start_date === today) {
-      nextInvoice = getNextSubscriptionDate(sub.start_date, sub.frequency)
+    // Ustalamy wartość nextInvoice
+    if (isEditMode && sub.next_invoice) {
+      // W trybie edycji używamy przekazanej wartości next_invoice
+      nextInvoice = sub.next_invoice;
+      
+      // Jeśli użytkownik ustawił next_invoice na dzisiaj, tworzymy fakturę i aktualizujemy next_invoice
+      if (nextInvoice === today) {
+        shouldCreateInvoice = true;
+        // Aktualizujemy next_invoice na następną datę po dzisiejszej
+        nextInvoice = getNextSubscriptionDate(today, sub.frequency);
+      }
+    } else if (sub.start_date === today) {
+      // Dla nowych subskrypcji zaczynających się dzisiaj, ustalamy następną datę
+      nextInvoice = getNextSubscriptionDate(sub.start_date, sub.frequency);
+      shouldCreateInvoice = !isEditMode; // Tylko dla nowych subskrypcji
     } else {
-      nextInvoice = sub.start_date
+      // Dla nowych subskrypcji zaczynających się w przyszłości, pierwsza faktura to data startowa
+      nextInvoice = sub.start_date;
     }
 
     // Convert products to the format needed for DB storage
@@ -104,8 +121,8 @@ export async function POST(c: Context) {
       }
     }
 
-    // Create and send initial invoice if subscription starts today
-    if (sub.start_date === today) {
+    // Create and send invoice if needed
+    if (shouldCreateInvoice) {
         // Construct invoice data directly
         const invoiceData = {
             userid: subscriptionData.userid,
