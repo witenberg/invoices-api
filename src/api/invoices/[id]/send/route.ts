@@ -11,7 +11,11 @@ export async function POST(c: Context) {
     }
     
     try {
-        const emailResult = await sendInvoiceEmail(id);
+        // Get request body for reminder flag
+        const body = await c.req.json().catch(() => ({}));
+        const isReminder = body.isReminder || false;
+        
+        const emailResult = await sendInvoiceEmail(id, isReminder);
 
         if (!emailResult.success) {
             return c.json({ 

@@ -10,7 +10,7 @@ interface PaymentLinkResponse {
   url: string;
 }
 
-export async function sendInvoiceEmail(invoiceid: string) {
+export async function sendInvoiceEmail(invoiceid: string, isReminder: boolean = false) {
   try {
     const db = createDB();
     
@@ -90,8 +90,8 @@ export async function sendInvoiceEmail(invoiceid: string) {
             quantity: 1,
           }],
           mode: 'payment',
-          success_url: `${process.env.APP_URL}/invoices/${invoiceid}?payment=success`,
-          cancel_url: `${process.env.APP_URL}/invoices/${invoiceid}?payment=cancelled`,
+          success_url: `${process.env.APP_URL}/invoices/${invoiceid}?status=success`,
+          cancel_url: `${process.env.APP_URL}/invoices/${invoiceid}?status=cancelled`,
           customer_email: client.email,
           payment_intent_data: {
             transfer_data: {
@@ -140,12 +140,17 @@ export async function sendInvoiceEmail(invoiceid: string) {
     const { data, error } = await resend.emails.send({
       from: 'Invoices App <onboarding@resend.dev>', // Replace with your verified domain
       to: client_email,
-      subject: `Invoice #${invoiceid} from ${user_name}`,
+      subject: isReminder 
+        ? `Payment Reminder: Invoice #${invoiceid} from ${user_name}` 
+        : `Invoice #${invoiceid} from ${user_name}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
           <h2 style="color: #333;">Invoice from ${user_name}</h2>
           <p>Hello,</p>
-          <p>You have received an invoice for payment:</p>
+          ${isReminder 
+            ? `<p><strong>This is a friendly reminder</strong> about your pending invoice:</p>`
+            : `<p>You have received an invoice for payment:</p>`
+          }
           <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0;">
             <p><strong>Invoice Number:</strong> ${invoiceid}</p>
             <p><strong>Amount:</strong> ${currency} ${total.toFixed(2)}</p>

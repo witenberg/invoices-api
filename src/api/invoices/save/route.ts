@@ -80,7 +80,8 @@ export async function POST(c: Context) {
     }
 
     const currentDate = getCurrentDateUTC();
-    if (invoice.options.date === currentDate && savedInvoiceId && invoice.status === 'Sent') {
+    // Only send email for new invoices being sent, not for updates
+    if (invoice.options.date === currentDate && savedInvoiceId && invoice.status === 'Sent' && !invoiceid) {
       await sendInvoiceEmail(savedInvoiceId.toString());
     }
 

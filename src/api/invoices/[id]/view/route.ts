@@ -100,7 +100,8 @@ export async function GET(c: Context) {
             userid: invoice.userid,
             username: user.username,
             client_name: client.name,
-            acceptcreditcards: invoice.acceptcreditcards
+            acceptcreditcards: invoice.acceptcreditcards,
+            status: invoice.status
         };
 
         return c.json(invoiceData);

@@ -1,6 +1,6 @@
 import { Context } from 'hono';
 import { createDB, schema } from '../../../../db/db';
-import { eq } from 'drizzle-orm';
+import { eq, like, desc } from 'drizzle-orm';
 import { stripe } from '../../../../config/stripe';
 import type Stripe from 'stripe';
 
@@ -28,6 +28,44 @@ export async function GET(c: Context) {
       return c.json({ payments: [] });
     }
 
+    // First, check if there are logs for cash payments for this invoice
+    const cashPaymentLogs = await db.select()
+      .from(schema.logs)
+      .where(like(schema.logs.action, `%invoice #${id} as paid%`))
+      .orderBy(desc(schema.logs.timestamp))
+      .limit(1);
+    
+    // If we found a cash payment log, create a cash payment record
+    if (cashPaymentLogs.length > 0) {
+      // Calculate amount from invoice
+      let amount = 1000; // Default $10 as fallback
+      if (invoice.total) {
+        amount = Number(invoice.total) * 100;
+      } else if (invoice.products && Array.isArray(invoice.products)) {
+        try {
+          amount = (invoice.products as any[]).reduce((sum, product) => {
+            const price = parseFloat(product.amount) || 0;
+            const quantity = parseInt(product.quantity) || 1;
+            return sum + (price * quantity * 100);
+          }, 0);
+        } catch (e) {
+          console.error('Error calculating amount from products', e);
+        }
+      }
+      
+      const cashPayment = {
+        id: `cash_${id}_${Date.now()}`,
+        amount: Math.round(amount),
+        currency: invoice.currency.toLowerCase(),
+        status: 'succeeded',
+        created: Math.floor(Date.now() / 1000),
+        paymentMethod: 'Cash'
+      };
+      
+      return c.json({ payments: [cashPayment] });
+    }
+    
+    // Continue with the rest of the function to check for Stripe-based payments
     // Fetch user for Stripe account ID
     const user = await db.query.users.findFirst({
       where: eq(schema.users.userid, invoice.userid),
@@ -38,6 +76,51 @@ export async function GET(c: Context) {
 
     if (!user || !user.stripeAccountid) {
       return c.json({ error: "User Stripe account not found" }, 404);
+    }
+
+    // Array to hold all found payments
+    const payments = [];
+
+    // First, try to find any payment intents with this invoice ID in metadata
+    // This will catch manual payments marked through our mark-paid endpoint
+    try {
+      const paymentIntents = await stripe.paymentIntents.list(
+        {
+          limit: 10,
+          created: {
+            // Look at payment intents from the last 30 days
+            gte: Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60
+          }
+        },
+        {
+          stripeAccount: user.stripeAccountid
+        }
+      );
+
+      // Filter payment intents by checking metadata
+      const relevantPaymentIntents = paymentIntents.data.filter((pi: any) => 
+        pi.metadata && pi.metadata.invoiceId === id.toString()
+      );
+
+      // Add these to the payments array
+      for (const pi of relevantPaymentIntents) {
+        payments.push({
+          id: pi.id,
+          amount: pi.amount,
+          currency: pi.currency,
+          status: pi.status,
+          created: pi.created,
+          paymentMethod: pi.metadata?.paymentType || pi.payment_method_types?.join(', ') || 'card'
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching payment intents:', error);
+      // Continue with other methods
+    }
+
+    // If we already found payments, return them without checking sessions
+    if (payments.length > 0) {
+      return c.json({ payments });
     }
 
     // For Connect accounts, we need to fetch all recent sessions and filter manually
@@ -61,13 +144,15 @@ export async function GET(c: Context) {
       );
 
       if (relevantSessions.length === 0) {
-        // If no sessions found, return empty payments
+        // If no sessions found but we still have payments from previous steps
+        if (payments.length > 0) {
+          return c.json({ payments });
+        }
+        // Otherwise return empty payments array
         return c.json({ payments: [] });
       }
 
       // Process sessions to get payment data
-      const payments = [];
-      
       for (const session of relevantSessions) {
         // If session has payment intent, try to get payment details
         if (session.payment_intent && typeof session.payment_intent === 'string') {
@@ -108,6 +193,11 @@ export async function GET(c: Context) {
       return c.json({ payments });
     } catch (error) {
       console.error('Error fetching checkout sessions:', error);
+      // If we already found payments from previous steps
+      if (payments.length > 0) {
+        return c.json({ payments });
+      }
+      
       // Create a fallback payment record based on invoice data
       if (invoice.status === 'Paid') {
         // Calculate a reasonable amount for the fallback payment
@@ -134,7 +224,7 @@ export async function GET(c: Context) {
           currency: invoice.currency.toLowerCase(),
           status: 'succeeded',
           created: Math.floor(new Date(invoice.date).getTime() / 1000),
-          paymentMethod: 'Stripe'
+          paymentMethod: 'Cash' // Changed to Cash for manually marked
         };
         return c.json({ payments: [fallbackPayment] });
       }
