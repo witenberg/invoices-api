@@ -114,7 +114,7 @@ export async function POST(c: Context) {
       case 'subscription.created':
         // Check if user has active trial
         const user = await db.query.users.findFirst({
-          where: eq(schema.users.userid, parseInt(userId)),
+          where: eq(schema.users.userid, userId),
           columns: {
             isTrialActive: true,
             trialEndDate: true
@@ -166,7 +166,7 @@ export async function POST(c: Context) {
             subscriptionEndDate: subscriptionData.next_billed_at ? new Date(subscriptionData.next_billed_at) : null,
             paddleSubscriptionId: subscriptionData.id,
           })
-          .where(eq(schema.users.userid, parseInt(userId)));
+          .where(eq(schema.users.userid, userId));
         break;
 
       case 'subscription.updated':
@@ -177,7 +177,7 @@ export async function POST(c: Context) {
             subscriptionEndDate: subscriptionData.next_billed_at ? new Date(subscriptionData.next_billed_at) : null,
             paddleSubscriptionId: subscriptionData.id,
           })
-          .where(eq(schema.users.userid, parseInt(userId)));
+          .where(eq(schema.users.userid, userId));
         break;
 
       case 'subscription.canceled':
@@ -187,7 +187,7 @@ export async function POST(c: Context) {
             isSubscriptionActive: false,
             subscriptionEndDate: subscriptionData.next_billed_at ? new Date(subscriptionData.next_billed_at) : null,
           })
-          .where(eq(schema.users.userid, parseInt(userId)));
+          .where(eq(schema.users.userid, userId));
         break;
 
       case 'subscription.payment.succeeded':
@@ -197,7 +197,7 @@ export async function POST(c: Context) {
             isSubscriptionActive: true,
             subscriptionEndDate: subscriptionData.next_billed_at ? new Date(subscriptionData.next_billed_at) : null,
           })
-          .where(eq(schema.users.userid, parseInt(userId)));
+          .where(eq(schema.users.userid, userId));
         break;
 
       case 'subscription.payment.failed':

@@ -16,7 +16,7 @@ export async function GET(c: Context) {
             })
             .from(schema.salesPages)
             .leftJoin(schema.users, eq(schema.users.userid, schema.salesPages.userid))
-            .where(eq(schema.salesPages.id, parseInt(salesPageId)))
+            .where(eq(schema.salesPages.id, salesPageId))
             .limit(1);
 
         if (!salesPage[0]?.stripeAccountid) {

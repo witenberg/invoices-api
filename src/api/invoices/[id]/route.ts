@@ -13,7 +13,7 @@ export async function GET(c: Context) {
     try {
         const db = createDB();
         const invoice = await db.query.invoices.findFirst({
-            where: eq(schema.invoices.invoiceid, parseInt(id))
+            where: eq(schema.invoices.invoiceid, id)
         }) as InvoiceToEdit | undefined;
 
         if (!invoice) {
@@ -21,9 +21,9 @@ export async function GET(c: Context) {
         }
         
         const client = await db.query.clients.findFirst({
-            where: eq(schema.clients.clientid, invoice.clientid)
+        where: eq(schema.clients.clientid, invoice.clientid)
         });
-        
+
         if (!client) {
             return c.json({ error: "Client not found" }, 404);
         }

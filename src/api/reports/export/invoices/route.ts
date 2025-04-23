@@ -27,7 +27,7 @@ export async function POST(c: Context) {
       .leftJoin(schema.clients, eq(schema.invoices.clientid, schema.clients.clientid))
       .where(
         and(
-          eq(schema.invoices.userid, parseInt(userId)),
+          eq(schema.invoices.userid, userId),
           gte(schema.invoices.date, from),
           lte(schema.invoices.date, to)
         )

@@ -5,8 +5,8 @@ import { eq, and } from 'drizzle-orm';
 export async function GET(c: Context) {
   const userId = c.req.query('userId');
   const status = c.req.query('status');
-  const subId = c.req.query('subId') ? parseInt(c.req.query('subId')!) : null;
-  const clientId = c.req.query('clientId') ? parseInt(c.req.query('clientId')!) : null;
+  const subId = c.req.query('subId') ? c.req.query('subId') : null;
+  const clientId = c.req.query('clientId') ? c.req.query('clientId') : null;
 
   console.log(userId, status, subId, clientId);
 
@@ -30,7 +30,7 @@ export async function GET(c: Context) {
     .from(schema.invoices)
     .leftJoin(schema.clients, eq(schema.invoices.clientid, schema.clients.clientid))
     .where(and(
-      eq(schema.invoices.userid, parseInt(userId)),
+      eq(schema.invoices.userid, userId),
       ...(status ? [eq(schema.invoices.status, status)] : []),
       ...(subId ? [eq(schema.invoices.subscriptionid, subId)] : []),
       ...(clientId ? [eq(schema.invoices.clientid, clientId)] : [])

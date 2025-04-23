@@ -18,7 +18,7 @@ export async function GET(c: Context) {
       invoiceid: schema.invoices.invoiceid
     })
     .from(schema.invoices)
-    .where(eq(schema.invoices.invoiceid, parseInt(id)))
+    .where(eq(schema.invoices.invoiceid, id))
     .limit(1);
 
     if (!invoice || invoice.length === 0) {

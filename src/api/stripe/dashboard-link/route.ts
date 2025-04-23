@@ -15,7 +15,7 @@ export async function POST(c: Context) {
     // Get user's Stripe account ID
     const [user] = await db.select({
       stripeAccountid: schema.users.stripeAccountid
-    }).from(schema.users).where(eq(schema.users.userid, parseInt(userId)));
+    }).from(schema.users).where(eq(schema.users.userid, userId));
 
     if (!user?.stripeAccountid) {
       return c.json({ error: 'Stripe account not connected' }, 400);

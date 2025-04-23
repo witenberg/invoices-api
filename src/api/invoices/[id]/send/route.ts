@@ -29,7 +29,7 @@ export async function POST(c: Context) {
         const updatedInvoice = await db
             .update(schema.invoices)
             .set({ status: 'Sent' })
-            .where(eq(schema.invoices.invoiceid, parseInt(id)))
+            .where(eq(schema.invoices.invoiceid, id))
             .returning({ status: schema.invoices.status });
 
         if (!updatedInvoice || updatedInvoice.length === 0) {

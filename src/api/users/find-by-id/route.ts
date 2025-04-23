@@ -12,7 +12,7 @@ export async function GET(c: Context) {
 
     const db = createDB();
     const user = await db.query.users.findFirst({
-      where: eq(schema.users.userid, parseInt(id))
+      where: eq(schema.users.userid, id)
     });
 
     if (!user) {

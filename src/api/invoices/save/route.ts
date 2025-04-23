@@ -11,7 +11,7 @@ export async function POST(c: Context) {
     const invoice = await c.req.json<Invoice>();
 
     const db = createDB();
-    let invoiceid = invoice.invoiceid ? parseInt(invoice.invoiceid.toString()) : undefined;
+    let invoiceid = invoice.invoiceid ? invoice.invoiceid : undefined;
 
     // Calculate total amount from products
     let subtotal = 0;
@@ -37,8 +37,8 @@ export async function POST(c: Context) {
     total = Math.round(total * 100) / 100;
 
     const invoiceData = {
-      userid: parseInt(invoice.userid.toString()),
-      clientid: parseInt(invoice.clientid.toString()),
+      userid: invoice.userid,
+      clientid: invoice.clientid,
       status: invoice.status,
       currency: invoice.options.currency,
       language: invoice.options.language,
@@ -51,7 +51,7 @@ export async function POST(c: Context) {
       secondtaxname: invoice.options.secondtax?.name || null,
       acceptcreditcards: Boolean(invoice.options.acceptcreditcards) || false,
       acceptpaypal: Boolean(invoice.options.acceptpaypal) || false,
-      subscriptionid: invoice.subscriptionid ? parseInt(invoice.subscriptionid.toString()) : null,
+      subscriptionid: invoice.subscriptionid ? invoice.subscriptionid : null,
       products: invoice.items.map((item: InvoiceItem) => ({
         id: item.id,
         name: item.name,
@@ -61,7 +61,7 @@ export async function POST(c: Context) {
       total: total.toString()
     };
 
-    let savedInvoiceId: number | undefined = invoiceid;
+    let savedInvoiceId: string | undefined = invoiceid;
 
     if (invoiceid) {
       // Update existing invoice

@@ -15,7 +15,7 @@ export async function POST(c: Context) {
     
     // Fetch invoice
     const invoice = await db.query.invoices.findFirst({
-      where: eq(schema.invoices.invoiceid, parseInt(id))
+      where: eq(schema.invoices.invoiceid, id)
     });
 
     if (!invoice) {
@@ -43,7 +43,7 @@ export async function POST(c: Context) {
     // Update the invoice status to Paid
     await db.update(schema.invoices)
       .set({ status: 'Paid' })
-      .where(eq(schema.invoices.invoiceid, parseInt(id)));
+      .where(eq(schema.invoices.invoiceid, id));
 
     // Create a "Cash payment" record in the logs
     await db.insert(schema.logs).values({

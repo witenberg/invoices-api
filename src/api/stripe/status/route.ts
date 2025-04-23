@@ -17,7 +17,7 @@ export async function POST(c: Context) {
       stripeAccountid: schema.users.stripeAccountid
     })
     .from(schema.users)
-    .where(eq(schema.users.userid, parseInt(userId)))
+    .where(eq(schema.users.userid, userId))
     .limit(1);
 
     return c.json({ 

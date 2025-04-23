@@ -16,7 +16,7 @@ export async function sendInvoiceEmail(invoiceid: string, isReminder: boolean = 
     
     // Fetch invoice
     const invoice = await db.query.invoices.findFirst({
-      where: eq(schema.invoices.invoiceid, parseInt(invoiceid)),
+      where: eq(schema.invoices.invoiceid, invoiceid),
     });
 
     if (!invoice) {

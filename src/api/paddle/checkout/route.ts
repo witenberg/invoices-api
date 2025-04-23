@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { paddlePricesIds } from '../../../constants/prices';
 
 // Helper function to check if a user is verified
-async function checkUserVerified(userId: number): Promise<boolean> {
+async function checkUserVerified(userId: string): Promise<boolean> {
   try {
     const db = createDB();
     const user = await db.query.users.findFirst({
@@ -30,7 +30,7 @@ export async function POST(c: Context) {
     }
 
     // Check if user is verified
-    const isUserVerified = await checkUserVerified(parseInt(userId.toString()));
+    const isUserVerified = await checkUserVerified(userId);
     
     if (!isUserVerified) {
       return c.json({ error: 'User is not verified' }, 401);

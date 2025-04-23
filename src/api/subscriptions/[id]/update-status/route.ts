@@ -21,7 +21,7 @@ export async function PUT(c: Context) {
     const db = createDB();
     const result = await db.update(schema.subscriptions)
       .set({ status })
-      .where(eq(schema.subscriptions.subscriptionid, parseInt(id)))
+      .where(eq(schema.subscriptions.subscriptionid, id))
       .returning();
 
     if (result.length === 0) {

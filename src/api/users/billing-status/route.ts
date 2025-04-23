@@ -13,7 +13,7 @@ export async function GET(c: Context) {
     const db = createDB();
     
     const user = await db.query.users.findFirst({
-      where: eq(schema.users.userid, parseInt(userId)),
+      where: eq(schema.users.userid, userId),
       columns: {
         isTrialActive: true,
         trialEndDate: true,
@@ -38,7 +38,7 @@ export async function GET(c: Context) {
         // Trial expired, update the status
         await db.update(schema.users)
           .set({ isTrialActive: false })
-          .where(eq(schema.users.userid, parseInt(userId)));
+          .where(eq(schema.users.userid, userId));
       }
     }
 
@@ -52,7 +52,7 @@ export async function GET(c: Context) {
           // Subscription expired, update the status
           await db.update(schema.users)
             .set({ isSubscriptionActive: false })
-            .where(eq(schema.users.userid, parseInt(userId)));
+            .where(eq(schema.users.userid, userId));
           subscriptionStatus = 'expired';
         }
       } else {

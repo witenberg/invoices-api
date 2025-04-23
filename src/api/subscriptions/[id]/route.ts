@@ -11,7 +11,7 @@ export async function GET(c: Context) {
         }
         
         const db = createDB();
-        const subscriptionId = parseInt(id);
+        const subscriptionId = id;
 
         // Fetch subscription first
         const subscription = await db.query.subscriptions.findFirst({

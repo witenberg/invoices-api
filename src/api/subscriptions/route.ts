@@ -6,7 +6,6 @@ export async function GET(c: Context) {
   const userId = c.req.query('userId');
   const status = c.req.query('status');
   const clientId = c.req.query('clientId');
-  console.log(userId, status, clientId);
   if (!userId) {
     return c.json({ error: "User ID is required" }, 400);
   }
@@ -15,12 +14,12 @@ export async function GET(c: Context) {
     const db = createDB();
     
     // Build the where clause
-    const whereClause = [eq(schema.subscriptions.userid, parseInt(userId))];
+    const whereClause = [eq(schema.subscriptions.userid, userId)];
     if (status) {
       whereClause.push(eq(schema.subscriptions.status, status));
     }
     if (clientId) {
-      whereClause.push(eq(schema.subscriptions.clientid, parseInt(clientId)));
+      whereClause.push(eq(schema.subscriptions.clientid, clientId));
     }
     // Fetch subscriptions
     const subscriptions = await db.query.subscriptions.findMany({

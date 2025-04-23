@@ -1,11 +1,11 @@
-import { pgSchema, serial, varchar, boolean, numeric, text, timestamp, foreignKey, integer, date, jsonb } from "drizzle-orm/pg-core"
+import { pgSchema, varchar, boolean, numeric, text, timestamp, foreignKey, date, jsonb, uuid } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const app = pgSchema("app");
 
 
 export const usersInApp = app.table("users", {
-	userid: serial().notNull(),
+	userid: uuid().defaultRandom().notNull().primaryKey(),
 	username: varchar({ length: 255 }).notNull(),
 	email: varchar({ length: 255 }).notNull(),
 	password: varchar({ length: 255 }),
@@ -30,8 +30,8 @@ export const usersInApp = app.table("users", {
 });
 
 export const clientsInApp = app.table("clients", {
-	clientid: serial().notNull(),
-	userid: integer().notNull(),
+	clientid: uuid().defaultRandom().notNull().primaryKey(),
+	userid: uuid().notNull(),
 	name: varchar({ length: 255 }).notNull(),
 	email: varchar({ length: 255 }).notNull(),
 	address: text(),
@@ -47,8 +47,8 @@ export const clientsInApp = app.table("clients", {
 ]);
 
 export const logsInApp = app.table("logs", {
-	logid: serial().notNull(),
-	userid: integer().notNull(),
+	logid: uuid().defaultRandom().notNull().primaryKey(),
+	userid: uuid().notNull(),
 	action: text().notNull(),
 	timestamp: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
@@ -60,9 +60,9 @@ export const logsInApp = app.table("logs", {
 ]);
 
 export const subscriptionsInApp = app.table("subscriptions", {
-	subscriptionid: serial().notNull(),
-	userid: integer().notNull(),
-	clientid: integer().notNull(),
+	subscriptionid: uuid().defaultRandom().notNull().primaryKey(),
+	userid: uuid().notNull(),
+	clientid: uuid().notNull(),
 	currency: varchar({ length: 10 }).notNull(),
 	language: varchar({ length: 10 }).notNull(),
 	notes: text(),
@@ -84,19 +84,19 @@ export const subscriptionsInApp = app.table("subscriptions", {
 	foreignKey({
 			columns: [table.clientid],
 			foreignColumns: [clientsInApp.clientid],
-			name: "fk_clients"
+			name: "subscriptions_clientid_fkey"
 		}).onDelete("cascade"),
 	foreignKey({
 			columns: [table.userid],
 			foreignColumns: [usersInApp.userid],
-			name: "fk_users"
+			name: "subscriptions_userid_fkey"
 		}).onDelete("cascade"),
 ]);
 
 export const invoicesInApp = app.table("invoices", {
-	invoiceid: integer().default(sql`nextval('invoices_invoiceid_seq'::regclass)`).notNull(),
-	userid: integer().notNull(),
-	clientid: integer().notNull(),
+	invoiceid: uuid().defaultRandom().notNull().primaryKey(),
+	userid: uuid().notNull(),
+	clientid: uuid().notNull(),
 	status: varchar({ length: 50 }).notNull(),
 	currency: varchar({ length: 10 }).notNull(),
 	language: varchar({ length: 20 }).notNull(),
@@ -109,7 +109,7 @@ export const invoicesInApp = app.table("invoices", {
 	secondtaxname: varchar({ length: 255 }),
 	acceptcreditcards: boolean().default(false),
 	acceptpaypal: boolean().default(false),
-	subscriptionid: integer(),
+	subscriptionid: uuid(),
 	products: jsonb().default([]).notNull(),
 	total: numeric({ precision: 10, scale: 2 }),
 }, (table) => [
@@ -123,11 +123,16 @@ export const invoicesInApp = app.table("invoices", {
 			foreignColumns: [usersInApp.userid],
 			name: "invoices_userid_fkey"
 		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.subscriptionid],
+			foreignColumns: [subscriptionsInApp.subscriptionid],
+			name: "invoices_subscriptionid_fkey"
+		}).onDelete("set null"),
 ]);
 
 export const emailVerificationTokensInApp = app.table("email_verification_tokens", {
-	tokenid: serial().notNull(),
-	userid: integer().notNull(),
+	tokenid: uuid().defaultRandom().notNull().primaryKey(),
+	userid: uuid().notNull(),
 	token: varchar({ length: 255 }).notNull(),
 	expiresAt: timestamp("expires_at").notNull(),
 }, (table) => [
@@ -139,8 +144,8 @@ export const emailVerificationTokensInApp = app.table("email_verification_tokens
 ]);
 
 export const salesPagesInApp = app.table("sales_pages", {
-	id: serial().notNull(),
-	userid: integer().notNull(),
+	id: uuid().defaultRandom().notNull().primaryKey(),
+	userid: uuid().notNull(),
 	title: varchar({ length: 255 }).notNull(),
 	description: text(),
 	price: numeric({ precision: 10, scale: 2 }).notNull(),

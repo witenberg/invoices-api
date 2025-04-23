@@ -66,7 +66,7 @@ export async function POST(c: Context) {
         // Update invoice status to paid
         await db.update(schema.invoices)
           .set({ status: 'Paid' })
-          .where(eq(schema.invoices.invoiceid, parseInt(invoiceId)));
+          .where(eq(schema.invoices.invoiceid, invoiceId));
       }
       break;
     }
@@ -80,7 +80,7 @@ export async function POST(c: Context) {
         // Keep invoice as 'Sent' when session expires
         await db.update(schema.invoices)
           .set({ status: 'Sent' })
-          .where(eq(schema.invoices.invoiceid, parseInt(invoiceId)));
+          .where(eq(schema.invoices.invoiceid, invoiceId));
       }
       break;
     }

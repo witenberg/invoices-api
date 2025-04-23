@@ -23,19 +23,19 @@ export interface InvoiceOptions {
 }
 
 export interface Invoice {
-  invoiceid?: number
-  userid: number
-  clientid: number
+  invoiceid?: string
+  userid: string
+  clientid: string
   status: InvoiceStatus
   options: InvoiceOptions
   items: InvoiceItem[]
-  subscriptionid?: number
+  subscriptionid?: string
 }
 
 export interface InvoiceToDisplay {
-  invoiceid: number
-  userid: number
-  clientid: number
+  invoiceid: string
+  userid: string
+  clientid: string
   status: InvoiceStatus
   currency: string
   total: number
@@ -44,9 +44,9 @@ export interface InvoiceToDisplay {
 }
 
 export interface InvoiceToEdit {
-  invoiceid: number
-  userid: number
-  clientid: number
+  invoiceid: string
+  userid: string
+  clientid: string
   status: InvoiceStatus
   currency: string
   language: string
@@ -73,8 +73,8 @@ export interface InvoiceSubscription {
 }
 
 export interface InvoicePrototype {
-  userid: number
-  clientid: number
+  userid: string
+  clientid: string
   currency: string
   language: string
   notes?: string
@@ -91,11 +91,11 @@ export interface InvoicePrototype {
     address?: string,
   }
   products: InvoiceItem[]
-  subscriptionid?: number
+  subscriptionid?: string
 }
 
 export interface InvoiceToPDF {
-  invoiceid: number;
+  invoiceid: string;
   date: string;
   currency: string;
   products: { name: string; amount: string; quantity: number }[];

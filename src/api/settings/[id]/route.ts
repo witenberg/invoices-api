@@ -24,7 +24,7 @@ export async function GET(c: Context) {
       invoiceNotes: schema.users.invoiceNotes
     })
     .from(schema.users)
-    .where(eq(schema.users.userid, parseInt(id)))
+    .where(eq(schema.users.userid, id))
     .limit(1);
 
     if (!user.length) {
@@ -75,7 +75,7 @@ export async function PUT(c: Context) {
     const db = createDB();
     const updatedUser = await db.update(schema.users)
       .set(updateData)
-      .where(eq(schema.users.userid, parseInt(id)))
+      .where(eq(schema.users.userid, id))
       .returning();
 
     if (!updatedUser.length) {

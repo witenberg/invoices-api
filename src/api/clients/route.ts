@@ -12,7 +12,7 @@ export async function GET(c: Context) {
   try {
     const db = createDB();
     const clients = await db.query.clients.findMany({
-      where: eq(schema.clients.userid, parseInt(userId)),
+      where: eq(schema.clients.userid, userId),
       orderBy: (clients, { asc }) => [asc(clients.name)]
     });
     
@@ -29,7 +29,7 @@ export async function POST(c: Context) {
   try {
     const db = createDB();
     const result = await db.insert(schema.clients).values({
-      userid: parseInt(client.userId),
+      userid: client.userId,
       name: client.name,
       email: client.email,
       address: client.address || '',

@@ -24,7 +24,7 @@ export async function POST(c: Context) {
     const db = createDB();
     await db.update(schema.users)
       .set({ stripeAccountid: account.id })
-      .where(eq(schema.users.userid, parseInt(userId)));
+      .where(eq(schema.users.userid, userId));
 
     // Create account link for onboarding
     const accountLink = await stripe.accountLinks.create({

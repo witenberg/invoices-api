@@ -20,7 +20,7 @@ export async function GET(c: Context) {
         .from(schema.clients)
         .where(
             and(
-                eq(schema.clients.userid, parseInt(userId)),
+                eq(schema.clients.userid, userId),
                 status ? ilike(schema.clients.name, `%${status}%`) : undefined
             )
         );
@@ -28,7 +28,7 @@ export async function GET(c: Context) {
         // Pobieramy faktury dla wszystkich klientów
         const invoices = await db.select()
             .from(schema.invoices)
-            .where(eq(schema.invoices.userid, parseInt(userId)));
+            .where(eq(schema.invoices.userid, userId));
 
         // Przetwarzamy dane w JavaScript
         const clientsWithStats = clients.map(({ client }) => {

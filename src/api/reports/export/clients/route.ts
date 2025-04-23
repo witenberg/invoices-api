@@ -18,7 +18,7 @@ export async function POST(c: Context) {
       .select()
       .from(schema.clients)
       .where(
-        eq(schema.clients.userid, parseInt(userId))
+        eq(schema.clients.userid, userId)
       );
 
     const headers = 'Name,Email,Address,Status,Currency,Language\n';

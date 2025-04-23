@@ -12,7 +12,7 @@ export async function GET(c: Context) {
     try {
         const db = createDB();
         const client = await db.query.clients.findFirst({
-            where: eq(schema.clients.clientid, parseInt(id)),
+            where: eq(schema.clients.clientid, id),
             // with: {
             //     invoices: true,
             //     subscriptions: true
@@ -48,7 +48,7 @@ export async function PUT(c: Context) {
                 currency: clientData.currency || 'USD',
                 language: clientData.language || 'English'
             })
-            .where(eq(schema.clients.clientid, parseInt(id)))
+            .where(eq(schema.clients.clientid, id))
             .returning();
 
         if (result.length === 0) {
@@ -72,7 +72,7 @@ export async function DELETE(c: Context) {
     try {
         const db = createDB();
         const result = await db.delete(schema.clients)
-            .where(eq(schema.clients.clientid, parseInt(id)))
+            .where(eq(schema.clients.clientid, id))
             .returning();
 
         if (result.length === 0) {

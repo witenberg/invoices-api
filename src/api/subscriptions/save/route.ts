@@ -16,7 +16,7 @@ export async function POST(c: Context) {
     }
 
     const db = createDB();
-    let subid = sub.subscriptionid ? parseInt(sub.subscriptionid.toString()) : undefined;
+    let subid = sub.subscriptionid ? sub.subscriptionid : undefined;
     const isEditMode = !!subid;  // Sprawdzamy, czy jest to edycja istniejącej subskrypcji
     
     let nextInvoice: string;
@@ -81,8 +81,8 @@ export async function POST(c: Context) {
 
     // Transform the subscription data to match the database schema
     const subscriptionData = {
-      userid: parseInt(sub.invoicePrototype.userid.toString()),
-      clientid: parseInt(sub.invoicePrototype.clientid.toString()),
+      userid: sub.invoicePrototype.userid,
+      clientid: sub.invoicePrototype.clientid,
       status: sub.status || 'Active',
       currency: sub.invoicePrototype.currency,
       language: sub.invoicePrototype.language,
@@ -102,7 +102,7 @@ export async function POST(c: Context) {
       total: total.toString()
     };
 
-    let savedSubId: number;
+    let savedSubId: string;
     if (subid) {
       // Update existing subscription
       const updateResult = await db.update(schema.subscriptions)

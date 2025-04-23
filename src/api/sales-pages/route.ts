@@ -13,7 +13,7 @@ export async function GET(c: Context) {
     }
 
     // Build the query conditions
-    const conditions = [eq(schema.salesPages.userid, parseInt(userId))];
+    const conditions = [eq(schema.salesPages.userid, userId)];
     if (status) {
       conditions.push(eq(schema.salesPages.status, status));
     }

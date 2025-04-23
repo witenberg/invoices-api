@@ -3,7 +3,7 @@ import { createDB, schema } from '../../../db/db';
 import { eq } from 'drizzle-orm';
 
 interface SalesPageData {
-  userid: number
+  userid: string
   title: string
   description?: string | null
   price: string
@@ -30,7 +30,7 @@ export async function POST(c: Context) {
     const user = await db
       .select({ stripeAccountid: schema.users.stripeAccountid })
       .from(schema.users)
-      .where(eq(schema.users.userid, parseInt(data.userId.toString())))
+      .where(eq(schema.users.userid, data.userId))
       .limit(1);
 
     if (!user[0]?.stripeAccountid) {
@@ -38,7 +38,7 @@ export async function POST(c: Context) {
     }
 
     const salesPageData: SalesPageData = {
-      userid: parseInt(data.userId.toString()),
+      userid: data.userId,
       title: data.content.title,
       description: data.content.description || null,
       price: data.content.price.toString(),
@@ -61,14 +61,14 @@ export async function POST(c: Context) {
       // salesPageData.image_url = await uploadImage(data.content.image);
     }
 
-    let savedId: number | undefined;
+    let savedId: string | undefined;
 
     if (data.id) {
       // Update existing sales page
       await db.update(schema.salesPages)
         .set(salesPageData)
-        .where(eq(schema.salesPages.id, parseInt(data.id.toString())));
-      savedId = parseInt(data.id.toString());
+        .where(eq(schema.salesPages.id, data.id));
+      savedId = data.id;
     } else {
       // Create new sales page
       const result = await db.insert(schema.salesPages)

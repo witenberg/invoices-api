@@ -1,6 +1,6 @@
 export interface Client {
-    userid: number
-    clientid: number
+    userid: string  
+    clientid: string
     name: string
     email: string
     address: string | null

@@ -6,7 +6,7 @@ export type SubscriptionStatus = 'Active' | 'Paused' | 'Deleted';
 export type SubscriptionFrequency = 'Weekly' | 'Every 2 weeks' | 'Every 4 weeks' | 'Monthly' | 'Quarterly' | 'Every 6 months' | 'Yearly'
 
 export interface Subscription {
-  subscriptionid?: number
+  subscriptionid?: string
   start_date: string
   frequency: SubscriptionFrequency
   end_date?: string
@@ -16,7 +16,7 @@ export interface Subscription {
 }
 
 export interface SubscriptionToDisplay {
-  subscriptionid: number
+  subscriptionid: string
   status: SubscriptionStatus
   currency: Currency
   total: number

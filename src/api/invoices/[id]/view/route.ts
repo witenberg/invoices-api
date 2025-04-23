@@ -14,7 +14,7 @@ export async function GET(c: Context) {
         
         // Fetch invoice
         const invoice = await db.query.invoices.findFirst({
-            where: eq(schema.invoices.invoiceid, parseInt(id))
+            where: eq(schema.invoices.invoiceid, id)
         });
 
         if (!invoice) {

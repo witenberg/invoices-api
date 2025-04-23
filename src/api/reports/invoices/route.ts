@@ -27,7 +27,7 @@ export async function GET(c: Context) {
     
     // Build the base conditions
     const conditions = [
-      eq(schema.invoices.userid, parseInt(userId)),
+      eq(schema.invoices.userid, userId),
       eq(schema.invoices.currency, currency),
       gte(schema.invoices.date, startDateStr),
       or(

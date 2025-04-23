@@ -12,7 +12,7 @@ export async function POST(c: Context) {
         defaultCurrency: currency,
         defaultLanguage: language
       })
-      .where(eq(schema.users.userid, parseInt(id)))
+      .where(eq(schema.users.userid, id))
       .returning();
 
     if (result.length === 0) {

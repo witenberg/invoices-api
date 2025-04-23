@@ -36,7 +36,7 @@ export async function GET(c: Context) {
             })
             .from(schema.salesPages)
             .leftJoin(schema.users, eq(schema.users.userid, schema.salesPages.userid))
-            .where(eq(schema.salesPages.id, parseInt(id)))
+            .where(eq(schema.salesPages.id, id))
             .limit(1);
 
         if (!salesPage[0]) {
@@ -118,7 +118,7 @@ export async function POST(c: Context) {
         await db
             .update(schema.salesPages)
             .set({ status })
-            .where(eq(schema.salesPages.id, parseInt(id)));
+            .where(eq(schema.salesPages.id, id));
 
         return c.json({ success: true, status });
 
