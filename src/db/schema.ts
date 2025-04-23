@@ -1,4 +1,4 @@
-import { pgSchema, varchar, boolean, numeric, text, timestamp, foreignKey, date, jsonb, uuid } from "drizzle-orm/pg-core"
+import { pgSchema, varchar, boolean, numeric, text, timestamp, foreignKey, date, jsonb, uuid, integer } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const app = pgSchema("app");
@@ -74,6 +74,7 @@ export const subscriptionsInApp = app.table("subscriptions", {
 	acceptcreditcards: boolean().default(false).notNull(),
 	acceptpaypal: boolean().default(false).notNull(),
 	startDate: date("start_date").notNull(),
+	daysToPay: integer("days_to_pay"),
 	frequency: varchar({ length: 20 }).notNull(),
 	endDate: date("end_date"),
 	status: varchar({ length: 20 }).notNull(),
@@ -101,6 +102,7 @@ export const invoicesInApp = app.table("invoices", {
 	currency: varchar({ length: 10 }).notNull(),
 	language: varchar({ length: 20 }).notNull(),
 	date: date().default(sql`CURRENT_DATE`).notNull(),
+	payment_date: date("payment_date"),
 	notes: text(),
 	discount: numeric({ precision: 10, scale:  2 }).default('0.00'),
 	salestax: numeric({ precision: 10, scale:  2 }),

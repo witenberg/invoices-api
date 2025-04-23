@@ -7,6 +7,7 @@ export interface InvoiceOptions {
   currency: string
   language: string
   date?: string
+  payment_date?: string
   notes?: string
   discount?: number
   isDiscountAmount?: boolean
@@ -51,6 +52,7 @@ export interface InvoiceToEdit {
   currency: string
   language: string
   date: string
+  payment_date?: string
   notes?: string
   discount?: number
   salestaxname?: string

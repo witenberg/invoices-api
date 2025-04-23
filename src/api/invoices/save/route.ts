@@ -43,6 +43,7 @@ export async function POST(c: Context) {
       currency: invoice.options.currency,
       language: invoice.options.language,
       date: invoice.options.date ? toUTCDateString(invoice.options.date) : getCurrentDateUTC(),
+      payment_date: invoice.options.payment_date ? toUTCDateString(invoice.options.payment_date) : null,
       notes: invoice.options.notes || null,
       discount: invoice.options.discount ? invoice.options.discount.toString() : null,
       salestax: invoice.options.salestax?.rate ? invoice.options.salestax.rate.toString() : null,
@@ -80,6 +81,7 @@ export async function POST(c: Context) {
     }
 
     const currentDate = getCurrentDateUTC();
+    console.log(currentDate, invoice.options.date)
     // Only send email for new invoices being sent, not for updates
     if (invoice.options.date === currentDate && savedInvoiceId && invoice.status === 'Sent' && !invoiceid) {
       await sendInvoiceEmail(savedInvoiceId.toString());

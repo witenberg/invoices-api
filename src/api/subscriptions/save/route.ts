@@ -98,6 +98,7 @@ export async function POST(c: Context) {
       frequency: sub.frequency,
       endDate: sub.end_date || null,
       nextInvoice: nextInvoice,
+      daysToPay: sub.days_to_pay ? sub.days_to_pay.toString() : null,
       products: products,
       total: total.toString()
     };
@@ -141,7 +142,11 @@ export async function POST(c: Context) {
             date: today, // Use today's date string
             subscriptionid: savedSubId, // Link to the saved subscription
             products: subscriptionData.products, // Use already formatted products
-            total: subscriptionData.total // Use the same calculated total
+            total: subscriptionData.total, // Use the same calculated total
+            payment_date: subscriptionData.daysToPay ? 
+              new Date(new Date(today).getTime() + parseInt(subscriptionData.daysToPay) * 24 * 60 * 60 * 1000)
+                .toISOString().split("T")[0] : 
+              null
         };
 
         // Insert invoice directly into the database

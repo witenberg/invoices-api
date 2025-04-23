@@ -76,6 +76,10 @@ import { POST as handlePaddleWebhook } from './api/paddle/webhook/route';
 // help
 import { POST as sendSupportMessage } from './api/help/route';
 
+// processing
+import { POST as processInvoices } from './api/process-invoices/route';
+import { POST as processSubscriptions } from './api/process-subscriptions/route';
+
 const app = new Hono();
 
 // Middleware
@@ -108,7 +112,6 @@ app.post('/api/invoices/:id/send', sendInvoiceEmail);
 app.get('/api/invoices/:id/generate-pdf', generateInvoicePDF);
 app.get('/api/invoices/:id/payments', getInvoicePayments);
 app.post('/api/invoices/:id/mark-paid', markInvoicePaid);
-
 // Reports routes
 app.get('/api/reports/invoices', getInvoicesReport);
 app.get('/api/reports/payments', getPaymentsReport);
@@ -170,6 +173,10 @@ app.post('/api/paddle/webhook', handlePaddleWebhook);
 
 // Help routes
 app.post('/api/help', sendSupportMessage);
+
+// processing routes
+app.post('/api/process-invoices', processInvoices);
+app.post('/api/process-subscriptions', processSubscriptions);
 
 // Error handling
 app.onError((err, c) => {
