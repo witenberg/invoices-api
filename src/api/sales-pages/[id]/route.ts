@@ -75,7 +75,11 @@ export async function GET(c: Context) {
                 }
             } else if (session.mode === 'subscription' && session.subscription) {
                 // Subscription
-                const subscription = await stripe.subscriptions.retrieve(session.subscription, {
+                const subscriptionId = typeof session.subscription === 'string' 
+                    ? session.subscription 
+                    : session.subscription.id;
+                
+                const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
                     expand: ['items']
                 }, {
                     stripeAccount: salesPage[0].stripeAccountid

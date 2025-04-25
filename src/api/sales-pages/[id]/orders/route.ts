@@ -43,7 +43,11 @@ export async function GET(c: Context) {
         const orders = await Promise.all(filteredSessions.map(async (session: any) => {
             if (session.mode === 'subscription' && session.subscription) {
                 // Handle subscription
-                const subscription = await stripe.subscriptions.retrieve(session.subscription, {
+                const subscriptionId = typeof session.subscription === 'string' 
+                    ? session.subscription 
+                    : session.subscription.id;
+                
+                const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
                     expand: ['customer', 'default_payment_method']
                 }, {
                     stripeAccount: stripeAccountid
@@ -59,7 +63,9 @@ export async function GET(c: Context) {
                     customer_email: subscription.customer?.email || subscription.default_payment_method?.billing_details?.email || 'Unknown',
                     payment_method: getPaymentMethodDisplayName(subscription.default_payment_method?.type || 'Unknown'),
                     created_at: new Date(subscription.created * 1000).toISOString(),
-                    next_payment_date: new Date(subscription.current_period_end * 1000).toISOString()
+                    next_payment_date: subscription.current_period_end
+                        ? new Date(subscription.current_period_end * 1000).toISOString()
+                        : null
                 };
             } else if (session.mode === 'payment' && session.payment_intent) {
                 // Handle one-time payment - use the expanded payment_intent directly
