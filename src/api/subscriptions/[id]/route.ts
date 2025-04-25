@@ -77,7 +77,10 @@ export async function GET(c: Context) {
             client_address: client.address || undefined,
             products: products, // Pass the parsed products array
             total: total, // Use stored total from database
-            total_invoices: totalInvoices // Add invoice count
+            total_invoices: totalInvoices, // Add invoice count
+            enable_reminders: subscription.enable_reminders,
+            reminder_days_before: subscription.reminder_days_before,
+            days_to_pay: subscription.daysToPay,
         };
 
         return c.json(subData);

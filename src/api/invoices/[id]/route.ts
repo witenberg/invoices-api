@@ -50,7 +50,10 @@ export async function GET(c: Context) {
                 email: client.email,
                 address: client.address || undefined,
             },
-            products: invoice.products as any[]
+            products: invoice.products as any[],
+            days_to_pay: invoice.days_to_pay || undefined,
+            enable_reminders: invoice.enable_reminders || false,
+            reminder_days_before: invoice.reminder_days_before || undefined,
         };
 
         console.log(invoiceData);

@@ -79,6 +79,7 @@ import { POST as sendSupportMessage } from './api/help/route';
 // processing
 import { POST as processInvoices } from './api/process-invoices/route';
 import { POST as processSubscriptions } from './api/process-subscriptions/route';
+import { POST as processReminders } from './api/process-reminders/route'
 
 const app = new Hono();
 
@@ -177,6 +178,7 @@ app.post('/api/help', sendSupportMessage);
 // processing routes
 app.post('/api/process-invoices', processInvoices);
 app.post('/api/process-subscriptions', processSubscriptions);
+app.post('/api/process-reminders', processReminders);
 
 // Error handling
 app.onError((err, c) => {

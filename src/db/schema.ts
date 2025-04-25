@@ -81,6 +81,9 @@ export const subscriptionsInApp = app.table("subscriptions", {
 	nextInvoice: date("next_invoice"),
 	products: jsonb().default([]).notNull(),
 	total: numeric({ precision: 10, scale: 2 }),
+	enable_reminders: boolean().default(false),
+	reminder_days_before: integer("reminder_days_before"),
+	last_reminder_sent: timestamp("last_reminder_sent"),
 }, (table) => [
 	foreignKey({
 			columns: [table.clientid],
@@ -114,6 +117,9 @@ export const invoicesInApp = app.table("invoices", {
 	subscriptionid: uuid(),
 	products: jsonb().default([]).notNull(),
 	total: numeric({ precision: 10, scale: 2 }),
+	enable_reminders: boolean().default(false),
+	reminder_days_before: integer("reminder_days_before"),
+	last_reminder_sent: timestamp("last_reminder_sent"),
 }, (table) => [
 	foreignKey({
 			columns: [table.clientid],

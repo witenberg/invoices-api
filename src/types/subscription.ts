@@ -8,6 +8,9 @@ export type SubscriptionFrequency = 'Weekly' | 'Every 2 weeks' | 'Every 4 weeks'
 export interface Subscription {
   subscriptionid?: string
   start_date: string
+  days_to_pay?: number
+  enable_reminders: boolean
+  reminder_days_before?: number
   frequency: SubscriptionFrequency
   end_date?: string
   status: SubscriptionStatus

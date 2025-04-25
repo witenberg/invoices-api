@@ -19,7 +19,7 @@ export async function POST(c: Context) {
     let subid = sub.subscriptionid ? sub.subscriptionid : undefined;
     const isEditMode = !!subid;  // Sprawdzamy, czy jest to edycja istniejącej subskrypcji
     
-    let nextInvoice: string;
+    let nextInvoice: string | null;
     let shouldCreateInvoice = false;
 
     // Ustalamy wartość nextInvoice
@@ -40,6 +40,12 @@ export async function POST(c: Context) {
     } else {
       // Dla nowych subskrypcji zaczynających się w przyszłości, pierwsza faktura to data startowa
       nextInvoice = sub.start_date;
+    }
+
+    // Sprawdzamy czy nextInvoice nie jest po endDate
+    if (sub.end_date && nextInvoice && nextInvoice > sub.end_date) {
+      nextInvoice = null;
+      sub.status = 'Paused';
     }
 
     // Convert products to the format needed for DB storage
@@ -100,7 +106,9 @@ export async function POST(c: Context) {
       nextInvoice: nextInvoice,
       daysToPay: sub.days_to_pay ? sub.days_to_pay.toString() : null,
       products: products,
-      total: total.toString()
+      total: total.toString(),
+      enable_reminders: sub.enable_reminders || false,
+      reminder_days_before: sub.reminder_days_before || null,
     };
 
     let savedSubId: string;

@@ -58,6 +58,9 @@ export async function GET(c: Context) {
         const subDataForEdit: Subscription = {
             subscriptionid: subscriptionFromDb.subscriptionid,
             start_date: subscriptionFromDb.startDate, // YYYY-MM-DD string
+            days_to_pay: subscriptionFromDb.daysToPay || undefined,
+            enable_reminders: subscriptionFromDb.enable_reminders || false,
+            reminder_days_before: subscriptionFromDb.reminder_days_before || undefined,
             frequency: subscriptionFromDb.frequency as SubscriptionFrequency,
             end_date: subscriptionFromDb.endDate || undefined, // YYYY-MM-DD string or undefined
             status: subscriptionFromDb.status as SubscriptionStatus,

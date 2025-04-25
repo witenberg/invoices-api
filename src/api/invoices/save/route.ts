@@ -59,7 +59,9 @@ export async function POST(c: Context) {
         amount: item.amount ? parseFloat(item.amount.toString()) : 0,
         quantity: item.quantity ? parseInt(item.quantity.toString()) : 1
       })),
-      total: total.toString()
+      total: total.toString(),
+      enable_reminders: invoice.options.enable_reminders || false,
+      reminder_days_before: invoice.options.reminder_days_before || null,
     };
 
     let savedInvoiceId: string | undefined = invoiceid;
@@ -81,7 +83,6 @@ export async function POST(c: Context) {
     }
 
     const currentDate = getCurrentDateUTC();
-    console.log(currentDate, invoice.options.date)
     // Only send email for new invoices being sent, not for updates
     if (invoice.options.date === currentDate && savedInvoiceId && invoice.status === 'Sent' && !invoiceid) {
       await sendInvoiceEmail(savedInvoiceId.toString());

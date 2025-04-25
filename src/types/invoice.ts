@@ -21,6 +21,9 @@ export interface InvoiceOptions {
   }
   acceptcreditcards: boolean
   acceptpaypal: boolean
+  enable_reminders: boolean
+  reminder_days_before: number
+  last_reminder_sent: string
 }
 
 export interface Invoice {
@@ -67,6 +70,9 @@ export interface InvoiceToEdit {
     address?: string,
   },
   products: InvoiceItem[]
+  days_to_pay?: number
+  enable_reminders: boolean
+  reminder_days_before?: number
 }
 
 export interface InvoiceSubscription {
