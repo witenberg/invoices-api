@@ -43,11 +43,7 @@ export async function GET(c: Context) {
 
             const outstanding = clientInvoices
                 .filter(inv => inv.status === 'Sent')
-                .reduce((sum, inv) => {
-                    const products = inv.products as any[];
-                    return products.length;
-                    // return sum + products.reduce((s, p) => s + (p.amount * p.quantity), 0);
-                }, 0);
+                .length
 
             return {
                 clientid: client.clientid,

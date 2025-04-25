@@ -19,6 +19,8 @@ export const usersInApp = app.table("users", {
 	secondTaxRate: numeric("second_tax_rate", { precision: 4, scale:  2 }),
 	address: varchar({ length: 255 }),
 	invoiceNotes: varchar("invoice_notes", { length: 255 }),
+	unpaidMessage: varchar("unpaid_message", { length: 255 }),
+	paidMessage: varchar("paid_message", { length: 255 }),
 	paddleConnected: boolean("paddle_connected").default(false),
 	stripeAccountid: text("stripe_accountid"),
 	stripeConnected: boolean("stripe_connected").default(false),

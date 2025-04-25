@@ -21,7 +21,9 @@ export async function GET(c: Context) {
       secondTaxName: schema.users.secondTaxName,
       secondTaxRate: schema.users.secondTaxRate,
       address: schema.users.address,
-      invoiceNotes: schema.users.invoiceNotes
+      invoiceNotes: schema.users.invoiceNotes,
+      unpaidMessage: schema.users.unpaidMessage,
+      paidMessage: schema.users.paidMessage
     })
     .from(schema.users)
     .where(eq(schema.users.userid, id))
@@ -40,7 +42,9 @@ export async function GET(c: Context) {
       second_tax_name: user[0].secondTaxName,
       second_tax_rate: user[0].secondTaxRate,
       address: user[0].address,
-      invoice_notes: user[0].invoiceNotes
+      invoice_notes: user[0].invoiceNotes,
+      unpaid_message: user[0].unpaidMessage,
+      paid_message: user[0].paidMessage
     };
 
     return c.json(response);
@@ -69,7 +73,9 @@ export async function PUT(c: Context) {
       secondTaxName: body.second_tax_name,
       secondTaxRate: body.second_tax_rate,
       address: body.address,
-      invoiceNotes: body.invoice_notes
+      invoiceNotes: body.invoice_notes,
+      unpaidMessage: body.unpaid_message,
+      paidMessage: body.paid_message
     };
 
     const db = createDB();
@@ -91,7 +97,9 @@ export async function PUT(c: Context) {
       second_tax_name: updatedUser[0].secondTaxName,
       second_tax_rate: updatedUser[0].secondTaxRate,
       address: updatedUser[0].address,
-      invoice_notes: updatedUser[0].invoiceNotes
+      invoice_notes: updatedUser[0].invoiceNotes,
+      unpaid_message: updatedUser[0].unpaidMessage,
+      paid_message: updatedUser[0].paidMessage
     };
 
     return c.json(response);
