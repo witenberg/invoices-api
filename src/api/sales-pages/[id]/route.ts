@@ -30,6 +30,7 @@ export async function GET(c: Context) {
                 frequency: schema.salesPages.frequency,
                 image_url: schema.salesPages.image_url,
                 status: schema.salesPages.status,
+                isDeleted: schema.salesPages.isDeleted,
                 accept_credit_cards: schema.salesPages.accept_credit_cards,
                 accept_paypal: schema.salesPages.accept_paypal,
                 stripeAccountid: schema.users.stripeAccountid
@@ -95,6 +96,7 @@ export async function GET(c: Context) {
 
         return c.json({
             ...salesPage[0],
+            isDeleted: salesPage[0].isDeleted || false,
             total_revenue: totalRevenue,
             orders_count: ordersCount
         });

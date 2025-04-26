@@ -33,6 +33,7 @@ export async function GET(c: Context) {
             userid: invoice.userid,
             clientid: invoice.clientid,
             status: invoice.status,
+            isDeleted: invoice.isDeleted || false,
             currency: invoice.currency,
             language: invoice.language,
             date: invoice.date.toString().split('T')[0],
@@ -54,6 +55,7 @@ export async function GET(c: Context) {
             days_to_pay: invoice.days_to_pay || undefined,
             enable_reminders: invoice.enable_reminders || false,
             reminder_days_before: invoice.reminder_days_before || undefined,
+            subscriptionid: invoice.subscriptionid || undefined,
         };
 
         console.log(invoiceData);

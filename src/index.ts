@@ -11,6 +11,7 @@ import { POST as sendInvoiceEmail } from './api/invoices/[id]/send/route';
 import { GET as generateInvoicePDF } from './api/invoices/[id]/generate-pdf/route';
 import { GET as getInvoicePayments } from './api/invoices/[id]/payments/route';
 import { POST as markInvoicePaid } from './api/invoices/[id]/mark-paid/route';
+import { PATCH as updateInvoiceStatus } from './api/invoices/[id]/status/route';
 
 // reports
 import { GET as getInvoicesReport } from './api/reports/invoices/route';
@@ -25,6 +26,8 @@ import { POST as createClient } from './api/clients/route';
 import { GET as getClientById } from './api/clients/[id]/route';
 import { GET as getClientsList } from './api/clients/list/route';
 import { PUT as updateClient } from './api/clients/[id]/route';
+import { GET as getClientStatus } from './api/clients/[id]/status/route';
+import { PATCH as patchClientStatus } from './api/clients/[id]/status/route';
 
 // subscriptions
 import { GET as getSubscriptions } from './api/subscriptions/route';
@@ -33,6 +36,9 @@ import { GET as getSubscriptionById } from './api/subscriptions/[id]/route';
 import { GET as getSubscriptionEdit } from './api/subscriptions/[id]/edit/route';
 import { PUT as updateSubscriptionStatus } from './api/subscriptions/[id]/update-status/route';
 import { POST as updatePreferences } from './api/update-preferences/route';
+import { GET as getSubscriptionStatus } from './api/subscriptions/[id]/status/route';
+import { PATCH as patchSubscriptionStatus } from './api/subscriptions/[id]/status/route';
+
 
 // sales pages
 import { POST as saveSalesPage } from './api/sales-pages/save/route';
@@ -41,6 +47,8 @@ import { GET as getSalesPageById } from './api/sales-pages/[id]/route';
 import { GET as getSalesPageOrders } from './api/sales-pages/[id]/orders/route';
 import { POST as updateSalesPageStatus } from './api/sales-pages/[id]/route';
 import { POST as createSalesPagePayment } from './api/sales-pages/create-payment/route';
+import { GET as getSalesPageStatus } from './api/sales-pages/[id]/status/route';
+import { PATCH as patchSalesPageStatus } from './api/sales-pages/[id]/status/route';
 
 // settings
 import { GET as getSettings } from './api/settings/[id]/route';
@@ -97,7 +105,7 @@ app.use('/api/stripe/webhook', cors({
 // Default CORS configuration for other endpoints
 app.use('*', cors({
 	origin: ['http://localhost:3000', 'https://dev.invoices-apg.pages.dev'],
-	allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+	allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
 	allowHeaders: ['Content-Type', 'Authorization'],
 	exposeHeaders: ['Content-Length', 'X-Requested-With'],
 	maxAge: 600,
@@ -113,6 +121,8 @@ app.post('/api/invoices/:id/send', sendInvoiceEmail);
 app.get('/api/invoices/:id/generate-pdf', generateInvoicePDF);
 app.get('/api/invoices/:id/payments', getInvoicePayments);
 app.post('/api/invoices/:id/mark-paid', markInvoicePaid);
+app.patch('/api/invoices/:id/status', updateInvoiceStatus);
+
 // Reports routes
 app.get('/api/reports/invoices', getInvoicesReport);
 app.get('/api/reports/payments', getPaymentsReport);
@@ -126,12 +136,17 @@ app.post('/api/clients', createClient);
 app.get('/api/clients/list', getClientsList);
 app.get('/api/clients/:id', getClientById);
 app.put('/api/clients/:id', updateClient);
+app.get('/api/clients/:id/status', getClientStatus);
+app.patch('/api/clients/:id/status', patchClientStatus);
+
 // subscriptions
 app.get('/api/subscriptions', getSubscriptions);
 app.post('/api/subscriptions/save', saveSubscription);
 app.get('/api/subscriptions/:id', getSubscriptionById);
 app.get('/api/subscriptions/:id/edit', getSubscriptionEdit);
 app.put('/api/subscriptions/:id/update-status', updateSubscriptionStatus);
+app.get('/api/subscriptions/:id/status', getSubscriptionStatus);
+app.patch('/api/subscriptions/:id/status', patchSubscriptionStatus);
 
 // sales pages
 app.post('/api/sales-pages/save', saveSalesPage);
@@ -140,6 +155,8 @@ app.post('/api/sales-pages/create-payment', createSalesPagePayment);
 app.get('/api/sales-pages/:id/orders', getSalesPageOrders);
 app.get('/api/sales-pages/:id', getSalesPageById);
 app.post('/api/sales-pages/:id', updateSalesPageStatus);
+app.get('/api/sales-pages/:id/status', getSalesPageStatus);
+app.patch('/api/sales-pages/:id/status', patchSalesPageStatus);
 
 // settings
 app.get('/api/settings/:id', getSettings);

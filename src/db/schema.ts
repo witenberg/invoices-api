@@ -40,6 +40,7 @@ export const clientsInApp = app.table("clients", {
 	status: varchar({ length: 20 }).default('No card'),
 	currency: varchar({ length: 10 }).default('USD'),
 	language: varchar({ length: 15 }).default('English'),
+	isDeleted: boolean("is_deleted").default(false),
 }, (table) => [
 	foreignKey({
 			columns: [table.userid],
@@ -80,6 +81,7 @@ export const subscriptionsInApp = app.table("subscriptions", {
 	frequency: varchar({ length: 20 }).notNull(),
 	endDate: date("end_date"),
 	status: varchar({ length: 20 }).notNull(),
+	isDeleted: boolean("is_deleted").default(false),
 	nextInvoice: date("next_invoice"),
 	products: jsonb().default([]).notNull(),
 	total: numeric({ precision: 10, scale: 2 }),
@@ -104,6 +106,7 @@ export const invoicesInApp = app.table("invoices", {
 	userid: uuid().notNull(),
 	clientid: uuid().notNull(),
 	status: varchar({ length: 50 }).notNull(),
+	isDeleted: boolean("is_deleted").default(false),
 	currency: varchar({ length: 10 }).notNull(),
 	language: varchar({ length: 20 }).notNull(),
 	date: date().default(sql`CURRENT_DATE`).notNull(),
@@ -172,6 +175,7 @@ export const salesPagesInApp = app.table("sales_pages", {
 	second_tax_name: varchar({ length: 100 }),
 	second_tax_rate: numeric({ precision: 5, scale: 2 }),
 	status: varchar({ length: 15 }).default('Draft'),
+	isDeleted: boolean("is_deleted").default(false),
 	created_at: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 	updated_at: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [

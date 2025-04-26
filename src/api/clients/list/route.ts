@@ -1,11 +1,12 @@
 import { Context } from "hono";
 import { createDB, schema } from "../../../db/db";
-import { eq, and, ilike } from "drizzle-orm";
+import { eq, and, ilike, or } from "drizzle-orm";
 
 export async function GET(c: Context) {
     try {
         const userId = c.req.query("userId");
         const status = c.req.query("status");
+        const includeDeleted = c.req.query("includeDeleted") === "true";
 
         if (!userId) {
             return c.json({ error: "userId is required" }, 400);
@@ -13,17 +14,27 @@ export async function GET(c: Context) {
 
         const db = createDB();
         
+        // Przygotowanie warunków zapytania
+        const conditions = [eq(schema.clients.userid, userId)];
+        
+        // Obsługa trzech przypadków filtrowania:
+        // 1. Deleted - zwracamy usunięte
+        // 2. Delinquents - zwracamy zalegających (nie usunięte)
+        // 3. Default - zwracamy wszystkie nieusunięte
+        if (status === "Deleted") {
+            // Jeśli szukamy usuniętych klientów
+            conditions.push(eq(schema.clients.isDeleted, true));
+        } else {
+            // W każdym innym przypadku wykluczamy usunięte rekordy
+            conditions.push(eq(schema.clients.isDeleted, false));
+        }
+        
         // Pobieramy podstawowe dane klientów
         const clients = await db.select({
             client: schema.clients
         })
         .from(schema.clients)
-        .where(
-            and(
-                eq(schema.clients.userid, userId),
-                status ? ilike(schema.clients.name, `%${status}%`) : undefined
-            )
-        );
+        .where(and(...conditions));
 
         // Pobieramy faktury dla wszystkich klientów
         const invoices = await db.select()
@@ -43,18 +54,29 @@ export async function GET(c: Context) {
 
             const outstanding = clientInvoices
                 .filter(inv => inv.status === 'Sent')
-                .length
+                .length;
+            
+            // Sprawdzamy, czy klient ma faktury ze statusem 'Overdue'
+            const hasOverdueInvoices = clientInvoices.some(inv => inv.status === 'Overdue');
 
             return {
                 clientid: client.clientid,
                 name: client.name,
-                status: client.status,
+                status: client.isDeleted ? "Deleted" : (client.status || "Active"),
                 currency: client.currency,
                 total_paid,
                 outstanding,
-                invoice_count: clientInvoices.length
+                invoice_count: clientInvoices.length,
+                isDeleted: client.isDeleted || false,
+                isDelinquent: hasOverdueInvoices
             };
         });
+
+        // Jeśli szukamy klientów z zaległościami (Delinquents)
+        if (status === "Delinquents") {
+            const delinquentClients = clientsWithStats.filter(client => client.isDelinquent);
+            return c.json(delinquentClients);
+        }
 
         return c.json(clientsWithStats);
     } catch (error) {

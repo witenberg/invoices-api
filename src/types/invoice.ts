@@ -52,6 +52,7 @@ export interface InvoiceToEdit {
   userid: string
   clientid: string
   status: InvoiceStatus
+  isDeleted?: boolean
   currency: string
   language: string
   date: string
@@ -73,6 +74,7 @@ export interface InvoiceToEdit {
   days_to_pay?: number
   enable_reminders: boolean
   reminder_days_before?: number
+  subscriptionid?: string
 }
 
 export interface InvoiceSubscription {

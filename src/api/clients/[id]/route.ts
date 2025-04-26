@@ -1,6 +1,6 @@
 import { Context } from 'hono';
 import { createDB, schema } from '../../../db/db';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 export async function GET(c: Context) {
     const id = c.req.param('id');
@@ -23,7 +23,22 @@ export async function GET(c: Context) {
             return c.json({ error: "Client not found" }, 404);
         }
 
-        return c.json(client);
+        // Sprawdzamy czy klient ma faktury ze statusem 'Overdue'
+        const overdueInvoices = await db.select()
+            .from(schema.invoices)
+            .where(
+                and(
+                    eq(schema.invoices.clientid, id),
+                    eq(schema.invoices.status, 'Overdue')
+                )
+            );
+
+        const isDelinquent = overdueInvoices.length > 0;
+
+        return c.json({
+            ...client,
+            isDelinquent
+        });
     } catch (error) {
         console.error("Error fetching client: ", error);
         return c.json({ error: "Internal Server Error" }, 500);

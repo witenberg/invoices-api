@@ -60,6 +60,7 @@ export async function GET(c: Context) {
             frequency: subscription.frequency,
             end_date: subscription.endDate || undefined, // Already a string YYYY-MM-DD or null
             status: subscription.status,
+            isDeleted: subscription.isDeleted || false,
             next_invoice: subscription.nextInvoice || undefined, // Already a string YYYY-MM-DD or null
             currency: subscription.currency,
             language: subscription.language,

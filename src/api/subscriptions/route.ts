@@ -1,11 +1,13 @@
 import { Context } from 'hono';
 import { createDB, schema } from '../../db/db';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or } from 'drizzle-orm';
 
 export async function GET(c: Context) {
   const userId = c.req.query('userId');
   const status = c.req.query('status');
   const clientId = c.req.query('clientId');
+  const includeDeleted = c.req.query('includeDeleted') === 'true';
+  
   if (!userId) {
     return c.json({ error: "User ID is required" }, 400);
   }
@@ -15,12 +17,26 @@ export async function GET(c: Context) {
     
     // Build the where clause
     const whereClause = [eq(schema.subscriptions.userid, userId)];
+    
+    // Handle special case for Deleted status
     if (status) {
-      whereClause.push(eq(schema.subscriptions.status, status));
+      if (status === 'Deleted') {
+        whereClause.push(eq(schema.subscriptions.isDeleted, true));
+      } else {
+        whereClause.push(eq(schema.subscriptions.status, status));
+        if (!includeDeleted) {
+          whereClause.push(eq(schema.subscriptions.isDeleted, false));
+        }
+      }
+    } else if (!includeDeleted) {
+      // By default, don't include deleted subscriptions
+      whereClause.push(eq(schema.subscriptions.isDeleted, false));
     }
+    
     if (clientId) {
       whereClause.push(eq(schema.subscriptions.clientid, clientId));
     }
+    
     // Fetch subscriptions
     const subscriptions = await db.query.subscriptions.findMany({
       where: and(...whereClause),
@@ -55,9 +71,13 @@ export async function GET(c: Context) {
         nextInvoiceDate = subscription.nextInvoice.toString().split('T')[0];
       }
 
+      // If subscription is deleted, show status as "Deleted"
+      const displayStatus = subscription.isDeleted ? 'Deleted' : subscription.status;
+
       return {
         subscriptionid: subscription.subscriptionid,
-        status: subscription.status,
+        status: displayStatus,
+        isDeleted: subscription.isDeleted || false,
         currency: subscription.currency,
         total: totalValue,
         client_id: subscription.clientid,
