@@ -59,6 +59,8 @@ import { POST as login } from './api/auth/login/route';
 import { POST as signup } from './api/auth/signup/route';
 import { POST as sendVerification } from './api/auth/send-verification/route';
 import { POST as verifyEmail } from './api/auth/verify-email/route';
+import { POST as forgotPassword } from './api/auth/forgot-password/route';
+import { POST as resetPassword } from './api/auth/reset-password/route';
 
 // User routes
 import { GET as findUserByEmail } from './api/users/find-by-email/route';
@@ -175,6 +177,8 @@ app.post('/api/auth/login', login);
 app.post('/api/auth/signup', signup);
 app.post('/api/auth/send-verification', sendVerification);
 app.post('/api/auth/verify-email', verifyEmail);
+app.post('/api/auth/forgot-password', forgotPassword);
+app.post('/api/auth/reset-password', resetPassword);
 
 // User routes
 app.get('/api/users/find-by-email', findUserByEmail);
