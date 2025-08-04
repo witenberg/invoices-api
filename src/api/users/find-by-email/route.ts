@@ -14,6 +14,7 @@ export async function GET(c: Context) {
     const user = await db.query.users.findFirst({
       where: eq(schema.users.email, email)
     });
+    console.log("user: ", user);
 
     if (!user) {
       return c.json({ error: "User not found" }, 404);

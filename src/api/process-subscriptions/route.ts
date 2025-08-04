@@ -17,7 +17,7 @@ export async function POST(c: Context) {
             .from(schema.subscriptions)
             .where(
                 and(
-                    eq(schema.subscriptions.nextInvoice, today_date),
+                    lte(schema.subscriptions.nextInvoice, today_date),
                     eq(schema.subscriptions.status, 'Active')
                 )
             );
@@ -29,10 +29,10 @@ export async function POST(c: Context) {
         const formattedSubscriptions = subscriptions.map((sub: any) => {
             return {
                 subscriptionid: sub.subscriptionid,
-                start_date: sub.startDate.toISOString().split("T")[0],
+                start_date: sub.startDate,
                 frequency: sub.frequency as SubscriptionFrequency,
-                next_invoice: sub.nextInvoice ? sub.nextInvoice.toISOString().split("T")[0] : undefined,
-                end_date: sub.endDate ? sub.endDate.toISOString().split("T")[0] : undefined,
+                next_invoice: sub.nextInvoice ? sub.nextInvoice : undefined,
+                end_date: sub.endDate ? sub.endDate : undefined,
                 invoicePrototype: {
                     userid: sub.userid,
                     clientid: sub.clientid,
@@ -40,7 +40,9 @@ export async function POST(c: Context) {
                     language: sub.language,
                     notes: sub.notes || undefined,
                     discount: sub.discount ? Number(sub.discount) : undefined,
+                    salestax_name: sub.salestax_name,
                     salestax: sub.salestax ? Number(sub.salestax) : undefined,
+                    secondtax_name: sub.secondtax_name,
                     secondtax: sub.secondtax ? Number(sub.secondtax) : undefined,
                     acceptcreditcards: sub.acceptcreditcards,
                     acceptpaypal: sub.acceptpaypal,
@@ -65,8 +67,8 @@ export async function POST(c: Context) {
                     date: today_date,
                     notes: sub.invoicePrototype.notes,
                     discount: sub.invoicePrototype.discount,
-                    salestax: sub.invoicePrototype.salestax ? { name: "Tax", rate: sub.invoicePrototype.salestax } : undefined,
-                    secondtax: sub.invoicePrototype.secondtax ? { name: "Tax 2", rate: sub.invoicePrototype.secondtax } : undefined,
+                    salestax: sub.invoicePrototype.salestax ? { name: sub.invoicePrototype.salestax_name, rate: sub.invoicePrototype.salestax } : undefined,
+                    secondtax: sub.invoicePrototype.secondtax ? { name: sub.invoicePrototype.secondtax_name, rate: sub.invoicePrototype.secondtax } : undefined,
                     acceptcreditcards: sub.invoicePrototype.acceptcreditcards,
                     acceptpaypal: sub.invoicePrototype.acceptpaypal
                 },

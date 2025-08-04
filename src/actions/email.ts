@@ -31,6 +31,7 @@ export async function sendInvoiceEmail(invoiceid: string, isReminder: boolean = 
             email: true
         }
     });
+    console.log("client", client);
 
     if (!client) {
         console.error('Error fetching related data: Client not found for invoice', invoiceid);
@@ -68,13 +69,14 @@ export async function sendInvoiceEmail(invoiceid: string, isReminder: boolean = 
     // Send email using Resend
     const { data, error } = await resend.emails.send({
       from: 'Invoices App <onboarding@resend.dev>', // Replace with your verified domain
-      to: client_email,
+      // to: client_email,
+      to: 'jakub.witenberg@gmail.com',
       subject: isReminder 
         ? `Payment Reminder: Invoice from ${user_name}` 
         : `Invoice from ${user_name}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
-          <h2 style="font-size: 24px; font-weight: bold; margin-bottom: 24px;">Invoice ${invoiceid}</h2>
+          <h2 style="font-size: 24px; font-weight: bold; margin-bottom: 24px;">Invoice ${invoiceid} to ${client.email}</h2>
           
           <p style="margin-bottom: 16px;">
             An invoice from ${user_name} for ${currency} ${total.toFixed(2)} ${paid ? 'was paid' : 'requires a payment'}.

@@ -1,6 +1,6 @@
 import { Context } from 'hono';
 import { createDB, schema } from '../../db/db';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, lt } from 'drizzle-orm';
 
 export async function POST(c: Context) {
   try {
@@ -14,12 +14,12 @@ export async function POST(c: Context) {
       now.getUTCDate()
     )).toISOString().split('T')[0];
 
-    // Find all invoices with payment_date equal to today and status 'Sent'
+    // Find all invoices with payment_date LESS THAN today and status 'Sent'
     const overdueInvoices = await db.select()
       .from(schema.invoices)
       .where(
         and(
-          eq(schema.invoices.payment_date, todayUTC),
+          lt(schema.invoices.payment_date, todayUTC),
           eq(schema.invoices.status, 'Sent')
         )
       );
@@ -37,7 +37,7 @@ export async function POST(c: Context) {
       .set({ status: 'Overdue' })
       .where(
         and(
-          eq(schema.invoices.payment_date, todayUTC),
+          lt(schema.invoices.payment_date, todayUTC),
           eq(schema.invoices.status, 'Sent')
         )
       )

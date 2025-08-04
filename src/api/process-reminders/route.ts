@@ -6,6 +6,7 @@ import { sendInvoiceEmail } from '../../actions/email';
 
 export async function POST(c: Context) {
     const today_date = getCurrentDateUTC();
+    // console.log("today_date", today_date);
 
     try {
         const db = createDB();
@@ -19,12 +20,10 @@ export async function POST(c: Context) {
                     eq(schema.invoices.enable_reminders, true),
                     isNull(schema.invoices.last_reminder_sent),
                     gte(schema.invoices.payment_date, today_date),
-                    lte(
-                        schema.invoices.payment_date,
-                        sql`${today_date}::date + (${schema.invoices.reminder_days_before} || 0) * interval '1 day'`
-                    )
+                    sql`${schema.invoices.payment_date}::date - ${today_date}::date = coalesce(${schema.invoices.reminder_days_before}, 0)`
                 )
             );
+        // console.log("invoices", invoices);
 
         if (invoices.length === 0) {
             return c.json({ success: false, message: "No reminders to process today" });

@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import type { ExecutionContext } from 'hono/dist/types';
 
 // invoice
 import { GET as getInvoices } from './api/invoices/route';
@@ -91,7 +92,7 @@ import { POST as processInvoices } from './api/process-invoices/route';
 import { POST as processSubscriptions } from './api/process-subscriptions/route';
 import { POST as processReminders } from './api/process-reminders/route'
 
-const app = new Hono();
+const app = new Hono<{ Bindings: Env }>();
 
 // Middleware
 app.use('*', logger());
@@ -201,6 +202,37 @@ app.post('/api/process-invoices', processInvoices);
 app.post('/api/process-subscriptions', processSubscriptions);
 app.post('/api/process-reminders', processReminders);
 
+// Handler for CRON triggers
+app.get('/api/cron/:jobName', async (c) => {
+  const jobName = c.req.param('jobName');
+  
+  try {
+    let result;
+    
+    switch (jobName) {
+      case 'process-invoices':
+        result = await processInvoices(c);
+        break;
+      case 'process-reminders':
+        result = await processReminders(c);
+        break;
+      case 'process-subscriptions':
+        result = await processSubscriptions(c);
+        break;
+      default:
+        return c.json({ error: `Unknown job name: ${jobName}` }, 400);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error(`Error running cron job ${jobName}:`, error);
+    return c.json({
+      error: 'Internal Server Error',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
 // Error handling
 app.onError((err, c) => {
 	console.error(`${err}`);
@@ -210,4 +242,50 @@ app.onError((err, c) => {
 	}, 500);
 });
 
-export default app;
+export default {
+  fetch: app.fetch,
+  // Define scheduled functions to match the cron triggers from wrangler.toml
+  scheduled: async (event: { cron: string }, env: Env, ctx: ExecutionContext) => {
+    const scheduler = app.fetch;
+    const url = new URL('https://placeholder-url.com');
+    
+    // Determine which endpoint to call based on cron schedule
+    switch (event.cron) {
+      case "0 4 * * *":
+        // Process overdue invoices at 4:00 UTC
+        url.pathname = '/api/cron/process-invoices';
+        break;
+      case "0 5 * * *":
+        // Process reminders at 5:00 UTC
+        url.pathname = '/api/cron/process-reminders';
+        break;
+      case "0 6 * * *":
+        // Process subscription invoices at 6:00 UTC
+        url.pathname = '/api/cron/process-subscriptions';
+        break;
+      case "0 7 * * *":
+        // Placeholder for the scheduled invoices task at 7:00 UTC
+        // TODO: Implement this functionality
+        console.log("Scheduled invoices task not yet implemented");
+        return;
+      default:
+        console.log(`Unknown cron schedule: ${event.cron}`);
+        return;
+    }
+    
+    // Create a request for the cron endpoint
+    const request = new Request(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    try {
+      // Execute the request against our app
+      const response = await scheduler(request, env, ctx);
+      const result = await response.json();
+      console.log(`CRON ${event.cron} executed:`, result);
+    } catch (error) {
+      console.error(`CRON ${event.cron} failed:`, error);
+    }
+  }
+};
