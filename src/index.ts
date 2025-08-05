@@ -13,6 +13,7 @@ import { GET as generateInvoicePDF } from './api/invoices/[id]/generate-pdf/rout
 import { GET as getInvoicePayments } from './api/invoices/[id]/payments/route';
 import { POST as markInvoicePaid } from './api/invoices/[id]/mark-paid/route';
 import { PATCH as updateInvoiceStatus } from './api/invoices/[id]/status/route';
+import { POST as trackInvoiceOpening } from './api/invoices/[id]/track/route';
 
 // reports
 import { GET as getInvoicesReport } from './api/reports/invoices/route';
@@ -125,6 +126,7 @@ app.get('/api/invoices/:id/generate-pdf', generateInvoicePDF);
 app.get('/api/invoices/:id/payments', getInvoicePayments);
 app.post('/api/invoices/:id/mark-paid', markInvoicePaid);
 app.patch('/api/invoices/:id/status', updateInvoiceStatus);
+app.post('/api/invoices/:id/track', trackInvoiceOpening);
 
 // Reports routes
 app.get('/api/reports/invoices', getInvoicesReport);

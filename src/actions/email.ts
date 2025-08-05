@@ -59,7 +59,11 @@ export async function sendInvoiceEmail(invoiceid: string, isReminder: boolean = 
     const client_email = client.email;
     const user_name = user.username;
     const currency = invoice.currency;
-    const invoiceUrl = `${process.env.APP_URL}/invoices/${invoiceid}`;
+    
+    // Use tracking URL for unpaid invoices, direct URL for paid invoices
+    const invoiceUrl = paid 
+      ? `${process.env.APP_URL}/invoices/${invoiceid}`
+      : `${process.env.APP_URL}/invoices/${invoiceid}?from=email`;
     
     // Get the appropriate message based on paid parameter
     const message = paid 

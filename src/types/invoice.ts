@@ -1,7 +1,7 @@
 import type { InvoiceItem } from "./invoiceItem";
 import { Subscription } from "./subscription";
 
-export type InvoiceStatus = 'Draft' | 'Sent' | 'Paid' | 'Refunded' | 'Deleted';
+export type InvoiceStatus = 'Draft' | 'Sent' | 'Opened' | 'Paid' | 'Refunded' | 'Deleted' | 'Overdue';
 
 export interface InvoiceOptions {
   currency: string

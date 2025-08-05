@@ -25,10 +25,14 @@ export async function POST(c: Context) {
 
         const db = createDB();
         
-        // Update invoice status to 'Sent'
+        // Update invoice status to 'Sent' and set sent_at timestamp
+        const now = new Date();
         const updatedInvoice = await db
             .update(schema.invoices)
-            .set({ status: 'Sent' })
+            .set({ 
+                status: 'Sent',
+                sent_at: now
+            })
             .where(eq(schema.invoices.invoiceid, id))
             .returning({ status: schema.invoices.status });
 

@@ -111,6 +111,8 @@ export const invoicesInApp = app.table("invoices", {
 	language: varchar({ length: 20 }).notNull(),
 	date: date().default(sql`CURRENT_DATE`).notNull(),
 	payment_date: date("payment_date"),
+	opened_at: timestamp("opened_at"),
+	sent_at: timestamp("sent_at"),
 	notes: text(),
 	discount: numeric({ precision: 10, scale:  2 }).default('0.00'),
 	salestax: numeric({ precision: 10, scale:  2 }),
