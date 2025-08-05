@@ -136,32 +136,32 @@ export async function GET(c: Context) {
 
         // Subtotal
         yPosition += 5;
-        doc.setFontSize(12);
-        doc.text('SUBTOTAL', 130, yPosition);
+        doc.setFontSize(10);
+        doc.text('SUBTOTAL', 120, yPosition);
         doc.text(subtotal.toFixed(2), 160, yPosition);
 
         // Discount if applicable
         if (discount > 0) {
             yPosition += 7;
-            doc.text(`DISCOUNT - ${discount}%`, 130, yPosition);
+            doc.text(`DISCOUNT - ${discount}%`, 120, yPosition);
             doc.text(`-${discountAmount.toFixed(2)}`, 160, yPosition);
             
             yPosition += 7;
-            doc.text('AFTER DISCOUNT', 130, yPosition);
+            doc.text('AFTER DISCOUNT', 120, yPosition);
             doc.text(afterDiscount.toFixed(2), 160, yPosition);
         }
 
         // Sales tax if applicable
         if (salestax > 0) {
             yPosition += 7;
-            doc.text(`${invoice.salestaxname || 'TAX'} - ${salestax}%`, 130, yPosition);
+            doc.text(`${invoice.salestaxname || 'TAX'} - ${salestax}%`, 120, yPosition);
             doc.text(salestaxAmount.toFixed(2), 160, yPosition);
         }
 
         // Second tax if applicable
         if (secondtax > 0) {
             yPosition += 7;
-            doc.text(`${invoice.secondtaxname || 'SECOND_TAX'} - ${secondtax}%`, 130, yPosition);
+            doc.text(`${invoice.secondtaxname || 'SECOND_TAX'} - ${secondtax}%`, 120, yPosition);
             doc.text(secondtaxAmount.toFixed(2), 160, yPosition);
         }
 
