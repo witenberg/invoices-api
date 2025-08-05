@@ -16,6 +16,7 @@ export async function GET(c: Context) {
         const invoice = await db.query.invoices.findFirst({
             where: eq(schema.invoices.invoiceid, id)
         });
+        console.log(invoice);
 
         if (!invoice) {
             return c.json({ error: "Invoice not found" }, 404);
@@ -101,7 +102,8 @@ export async function GET(c: Context) {
             username: user.username,
             client_name: client.name,
             acceptcreditcards: invoice.acceptcreditcards,
-            status: invoice.status
+            status: invoice.status,
+            notes: invoice.notes,
         };
 
         return c.json(invoiceData);
