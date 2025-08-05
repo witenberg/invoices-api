@@ -38,6 +38,8 @@ export async function GET(c: Context) {
             language: invoice.language,
             date: invoice.date.toString().split('T')[0],
             payment_date: invoice.payment_date ? invoice.payment_date.toString().split('T')[0] : null,
+            sent_at: invoice.sent_at ? invoice.sent_at.toISOString() : null,
+            opened_at: invoice.opened_at ? invoice.opened_at.toISOString() : null,
             notes: invoice.notes || undefined,
             discount: invoice.discount ? Number(invoice.discount) : undefined,
             salestaxname: invoice.salestaxname || undefined,

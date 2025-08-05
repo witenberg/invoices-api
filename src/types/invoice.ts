@@ -57,6 +57,8 @@ export interface InvoiceToEdit {
   language: string
   date: string
   payment_date?: string
+  sent_at?: Date
+  opened_at?: Date
   notes?: string
   discount?: number
   salestaxname?: string
