@@ -23,7 +23,9 @@ export async function GET(c: Context) {
 
     return c.json({
       userid: user.userid,
+      username: user.username,
       email: user.email,
+      loginMethod: user.loginMethod,
       isverified: user.isverified,
       isTrialActive: user.isTrialActive,
       trialEndDate: user.trialEndDate,

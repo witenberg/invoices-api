@@ -72,6 +72,7 @@ import { GET as isVerified } from './api/users/verify/route';
 import { GET as getAccessCheck } from './api/users/access-check/route';
 import { GET as getBillingStatus } from './api/users/billing-status/route';
 import { GET as getUserById } from './api/users/[id]/route';
+import { PUT as updateUser } from './api/users/[id]/route';
 
 // Stripe routes
 import { POST as createStripePayment } from './api/stripe/create-payment/route';
@@ -191,6 +192,7 @@ app.get('/api/users/find-by-id', findUserById);
 app.get('/api/users/access-check', getAccessCheck);
 app.get('/api/users/billing-status', getBillingStatus);
 app.get('/api/users/:id', getUserById);
+app.put('/api/users/:id', updateUser);
 
 // Paddle routes
 app.post('/api/paddle/checkout', paddleCheckout);
