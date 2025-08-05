@@ -86,6 +86,11 @@ export async function POST(c: Context) {
     // Only send email for new invoices being sent, not for updates
     if (invoice.options.date === currentDate && savedInvoiceId && invoice.status === 'Sent' && !invoiceid) {
       await sendInvoiceEmail(savedInvoiceId.toString());
+      
+      // Set sent_at to current timestamp
+      await db.update(schema.invoices)
+        .set({ sent_at: new Date() })
+        .where(eq(schema.invoices.invoiceid, savedInvoiceId));
     }
 
     return c.json({ success: true, invoiceid: savedInvoiceId });
