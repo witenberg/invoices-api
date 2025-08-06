@@ -29,6 +29,7 @@ export async function GET(c: Context) {
       trialEndDate: user.trialEndDate,
       isSubscriptionActive: user.isSubscriptionActive,
       loginMethod: user.loginMethod,
+      isTwoFactorEnabled: user.isTwoFactorEnabled,
     });
   } catch (error) {
     console.error("Error finding user:", error);

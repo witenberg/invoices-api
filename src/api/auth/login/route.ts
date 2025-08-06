@@ -2,12 +2,13 @@ import { Context } from 'hono';
 import { jwtVerify } from 'jose';
 import { createDB, schema } from '../../../db/db';
 import { eq } from 'drizzle-orm';
+import { TwoFactorAuth } from '../../../utils/crypto';
 
 const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET)
 
 export async function POST(c: Context) {
   try {
-    const { email, password } = await c.req.json();
+    const { email, password, twoFactorCode, skipTwoFactor } = await c.req.json();
 
     if (!email || !password) {
       return c.json({ error: "Email and password are required" }, 400);
@@ -31,19 +32,38 @@ export async function POST(c: Context) {
       // Hasło jest już zaszyfrowane, więc porównujemy je bezpośrednio
       const isMatch = password === user.password;
 
-      if (isMatch) {
-        return c.json({
-          userid: user.userid,
-          email: user.email,
-          isNewUser: false,
-          isVerified: user.isverified,
-          isTrialActive: user.isTrialActive,
-          trialEndDate: user.trialEndDate,
-          isSubscriptionActive: user.isSubscriptionActive,
-        });
-      } else {
+      if (!isMatch) {
         return c.json({ error: "Invalid password" }, 401);
       }
+
+      // Check if 2FA is enabled for this user
+      if (user.isTwoFactorEnabled && user.twoFactorSecret && !skipTwoFactor) {
+        if (!twoFactorCode) {
+          return c.json({ 
+            error: "2FA code required", 
+            requiresTwoFactor: true,
+            userid: user.userid
+          }, 400);
+        }
+
+        // Verify 2FA code
+        const is2FAValid = TwoFactorAuth.verifyToken(twoFactorCode, user.twoFactorSecret);
+        
+        if (!is2FAValid) {
+          return c.json({ error: "Invalid 2FA code" }, 401);
+        }
+      }
+
+      return c.json({
+        userid: user.userid,
+        email: user.email,
+        isNewUser: false,
+        isVerified: user.isverified,
+        isTrialActive: user.isTrialActive,
+        trialEndDate: user.trialEndDate,
+        isSubscriptionActive: user.isSubscriptionActive,
+        isTwoFactorEnabled: user.isTwoFactorEnabled,
+      });
     } catch (error) {
       console.error("Password verification failed:", error);
       return c.json({ error: "Password verification failed" }, 401);

@@ -94,6 +94,13 @@ import { POST as processInvoices } from './api/process-invoices/route';
 import { POST as processSubscriptions } from './api/process-subscriptions/route';
 import { POST as processReminders } from './api/process-reminders/route'
 
+// 2FA routes
+import generate2FAApp from './api/2fa/generate/route';
+import verify2FAApp from './api/2fa/verify/route';
+import enable2FAApp from './api/2fa/enable/route';
+import disable2FAApp from './api/2fa/disable/route';
+import status2FAApp from './api/2fa/status/route';
+
 const app = new Hono<{ Bindings: Env }>();
 
 // Middleware
@@ -197,6 +204,13 @@ app.put('/api/users/:id', updateUser);
 // Paddle routes
 app.post('/api/paddle/checkout', paddleCheckout);
 app.post('/api/paddle/webhook', handlePaddleWebhook);
+
+// 2FA routes
+app.route('/api/2fa/generate', generate2FAApp);
+app.route('/api/2fa/verify', verify2FAApp);
+app.route('/api/2fa/enable', enable2FAApp);
+app.route('/api/2fa/disable', disable2FAApp);
+app.route('/api/2fa/status', status2FAApp);
 
 // Help routes
 app.post('/api/help', sendSupportMessage);

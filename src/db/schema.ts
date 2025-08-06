@@ -29,6 +29,8 @@ export const usersInApp = app.table("users", {
 	paddleSubscriptionId: varchar("paddle_subscription_id", { length: 255 }),
 	isSubscriptionActive: boolean("is_subscription_active").default(false),
 	subscriptionEndDate: timestamp("subscription_end_date"),
+	isTwoFactorEnabled: boolean("is_two_factor_enabled").default(false).notNull(),
+	twoFactorSecret: text("two_factor_secret"),
 });
 
 export const clientsInApp = app.table("clients", {
