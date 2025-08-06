@@ -27,12 +27,6 @@ app.post('/', async (c) => {
     // Generate new secret
     const secret = TwoFactorAuth.generateSecret();
     
-    console.log('=== 2FA Generate Debug ===');
-    console.log('Generated secret:', secret);
-    console.log('Secret length:', secret.length);
-    console.log('Secret type:', typeof secret);
-    console.log('=== End Generate Debug ===');
-    
     // Generate QR code URI
     const qrCodeURI = TwoFactorAuth.generateQRCodeURI(secret, userData.email, 'InvoicesApp');
     

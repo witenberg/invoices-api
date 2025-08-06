@@ -35,11 +35,6 @@ export class TwoFactorAuth {
         currentTime + 90  // +3 okna (90s później)
       ];
       
-      console.log('=== 2FA Verification with Time Windows ===');
-      console.log('Input token:', cleanToken);
-      console.log('Secret being used:', cleanSecret);
-      console.log('Current timestamp:', currentTime);
-      
       // Sprawdź każde okno czasowe
       for (let i = 0; i < timeSteps.length; i++) {
         const timeForStep = timeSteps[i];
@@ -50,24 +45,19 @@ export class TwoFactorAuth {
         
         try {
           const generatedToken = authenticator.generate(cleanSecret);
-          console.log(`Time step ${i-3} (${timeForStep}): generated=${generatedToken}, match=${generatedToken === cleanToken}`);
           
           if (generatedToken === cleanToken) {
             Date.now = originalTime; // Przywróć oryginalny czas
-            console.log('✅ Token verified successfully in time window:', i-3);
-            console.log('=== End Verification ===');
             return true;
           }
         } catch (e) {
-          console.log(`Error in time step ${i-3}:`, e);
+          // Ignore errors and continue
         }
         
         // Przywróć oryginalny czas
         Date.now = originalTime;
       }
       
-      console.log('❌ Token not valid in any time window');
-      console.log('=== End Verification ===');
       return false;
       
     } catch (error) {

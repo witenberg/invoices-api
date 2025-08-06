@@ -29,22 +29,8 @@ app.post('/', async (c) => {
       return c.json({ error: '2FA is not currently enabled for this user' }, 400);
     }
     
-    console.log('=== 2FA Disable Debug ===');
-    console.log('User ID:', userId);
-    console.log('User email:', userData.email);
-    console.log('Secret from DB:', userData.twoFactorSecret);
-    console.log('2FA Enabled:', userData.isTwoFactorEnabled);
-    console.log('Secret type:', typeof userData.twoFactorSecret);
-    console.log('Secret length:', userData.twoFactorSecret?.length);
-    console.log('Token from request:', token);
-    console.log('Token type:', typeof token);
-    console.log('Token length:', token?.length);
-
     // Verify the token before disabling
-    // const isValid = true;
     const isValid = TwoFactorAuth.verifyToken(String(token), userData.twoFactorSecret);
-    console.log('Verification result:', isValid);
-    console.log('=== End Debug ===');
 
     if (!isValid) {
       return c.json({ error: 'Invalid verification code. Please try again.' }, 400);
