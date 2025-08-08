@@ -101,6 +101,10 @@ import enable2FAApp from './api/2fa/enable/route';
 import disable2FAApp from './api/2fa/disable/route';
 import status2FAApp from './api/2fa/status/route';
 
+// Blog routes
+import { GET as getBlogPosts } from './api/blog/route';
+import { GET as getBlogPostBySlug } from './api/blog/[slug]/route';
+
 const app = new Hono<{ Bindings: Env }>();
 
 // Middleware
@@ -219,6 +223,10 @@ app.post('/api/help', sendSupportMessage);
 app.post('/api/process-invoices', processInvoices);
 app.post('/api/process-subscriptions', processSubscriptions);
 app.post('/api/process-reminders', processReminders);
+
+// Blog routes
+app.get('/api/blog', getBlogPosts);
+app.get('/api/blog/:slug', getBlogPostBySlug);
 
 // Handler for CRON triggers
 app.get('/api/cron/:jobName', async (c) => {
