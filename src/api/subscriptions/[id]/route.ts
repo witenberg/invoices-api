@@ -1,6 +1,7 @@
 import { Context } from 'hono';
 import { createDB, schema } from '../../../db/db';
 import { eq, sql } from 'drizzle-orm';
+import { toDateString } from '../../../utils/dateUtils';
 
 export async function GET(c: Context) {
     try {
@@ -56,12 +57,12 @@ export async function GET(c: Context) {
         // Construct the response data, ensuring types match the frontend expectations
         const subData = {
             subscriptionid: subscription.subscriptionid,
-            start_date: subscription.startDate, // Already a string YYYY-MM-DD
+            start_date: toDateString(subscription.startDate), // Convert Date to YYYY-MM-DD string
             frequency: subscription.frequency,
-            end_date: subscription.endDate || undefined, // Already a string YYYY-MM-DD or null
+            end_date: subscription.endDate ? toDateString(subscription.endDate) : undefined, // Convert Date to YYYY-MM-DD string
             status: subscription.status,
             isDeleted: subscription.isDeleted || false,
-            next_invoice: subscription.nextInvoice || undefined, // Already a string YYYY-MM-DD or null
+            next_invoice: subscription.nextInvoice ? toDateString(subscription.nextInvoice) : undefined, // Convert Date to YYYY-MM-DD string
             currency: subscription.currency,
             language: subscription.language,
             notes: subscription.notes || undefined,

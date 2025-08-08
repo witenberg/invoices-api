@@ -3,11 +3,11 @@ import { createDB, schema } from '../../db/db';
 import { eq, and, isNull, lte } from 'drizzle-orm';
 import type { SubscriptionFrequency } from '../../types/subscription';
 import { getNextSubscriptionDate } from '../../actions/subscriptions';
-import { getCurrentDateUTC, toUTCDateString } from '../../utils/dateUtils';
+import { getCurrentTimestamp, getStartOfDay, toDateString } from '../../utils/dateUtils';
 import { sendInvoiceEmail } from '../../actions/email';
 
 export async function POST(c: Context) {
-    const today_date = getCurrentDateUTC();
+    const todayStart = getStartOfDay(getCurrentTimestamp());
 
     try {
         const db = createDB();
@@ -17,7 +17,7 @@ export async function POST(c: Context) {
             .from(schema.subscriptions)
             .where(
                 and(
-                    lte(schema.subscriptions.nextInvoice, today_date),
+                    lte(schema.subscriptions.nextInvoice, todayStart),
                     eq(schema.subscriptions.status, 'Active')
                 )
             );
@@ -26,103 +26,77 @@ export async function POST(c: Context) {
             return c.json({ success: false, message: "No subscriptions to process today" });
         }
 
-        const formattedSubscriptions = subscriptions.map((sub: any) => {
-            return {
-                subscriptionid: sub.subscriptionid,
-                start_date: sub.startDate,
-                frequency: sub.frequency as SubscriptionFrequency,
-                next_invoice: sub.nextInvoice ? sub.nextInvoice : undefined,
-                end_date: sub.endDate ? sub.endDate : undefined,
-                invoicePrototype: {
-                    userid: sub.userid,
-                    clientid: sub.clientid,
-                    currency: sub.currency,
-                    language: sub.language,
-                    notes: sub.notes || undefined,
-                    discount: sub.discount ? Number(sub.discount) : undefined,
-                    salestax_name: sub.salestax_name,
-                    salestax: sub.salestax ? Number(sub.salestax) : undefined,
-                    secondtax_name: sub.secondtax_name,
-                    secondtax: sub.secondtax ? Number(sub.secondtax) : undefined,
-                    acceptcreditcards: sub.acceptcreditcards,
-                    acceptpaypal: sub.acceptpaypal,
-                    products: sub.products as any[],
-                    client: {
-                        name: "",
-                        email: "",
-                    }
+        // Process each subscription
+        for (const subscription of subscriptions) {
+            try {
+                // Create invoice for this subscription
+                const invoiceData = {
+                    userid: subscription.userid,
+                    clientid: subscription.clientid,
+                    status: 'Sent',
+                    currency: subscription.currency,
+                    language: subscription.language,
+                    date: new Date(),
+                    payment_date: subscription.daysToPay ? 
+                        new Date(new Date().getTime() + subscription.daysToPay * 24 * 60 * 60 * 1000) : null,
+                    notes: subscription.notes || null,
+                    discount: subscription.discount ? subscription.discount.toString() : null,
+                    salestax: subscription.salestax ? subscription.salestax.toString() : null,
+                    salestaxname: subscription.salestaxname || null,
+                    secondtax: subscription.secondtax ? subscription.secondtax.toString() : null,
+                    secondtaxname: subscription.secondtaxname || null,
+                    acceptcreditcards: Boolean(subscription.acceptcreditcards) || false,
+                    acceptpaypal: Boolean(subscription.acceptpaypal) || false,
+                    subscriptionid: subscription.subscriptionid,
+                    products: subscription.products,
+                    total: subscription.total ? subscription.total.toString() : null,
+                    enable_reminders: subscription.enable_reminders || false,
+                    reminder_days_before: subscription.reminder_days_before || null,
+                };
+
+                const invoiceResult = await db.insert(schema.invoices)
+                    .values(invoiceData)
+                    .returning({ insertedId: schema.invoices.invoiceid });
+
+                const invoiceId = invoiceResult[0]?.insertedId;
+                if (invoiceId) {
+                    await sendInvoiceEmail(invoiceId.toString());
+                    
+                    // Set sent_at to current timestamp
+                    await db.update(schema.invoices)
+                        .set({ sent_at: new Date() })
+                        .where(eq(schema.invoices.invoiceid, invoiceId));
                 }
-            }
-        });
 
-        for (const sub of formattedSubscriptions) {
-            // Create invoice using the existing endpoint
-            const invoiceData = {
-                userid: sub.invoicePrototype.userid,
-                clientid: sub.invoicePrototype.clientid,
-                status: 'Sent' as const,
-                options: {
-                    currency: sub.invoicePrototype.currency,
-                    language: sub.invoicePrototype.language,
-                    date: today_date,
-                    notes: sub.invoicePrototype.notes,
-                    discount: sub.invoicePrototype.discount,
-                    salestax: sub.invoicePrototype.salestax ? { name: sub.invoicePrototype.salestax_name, rate: sub.invoicePrototype.salestax } : undefined,
-                    secondtax: sub.invoicePrototype.secondtax ? { name: sub.invoicePrototype.secondtax_name, rate: sub.invoicePrototype.secondtax } : undefined,
-                    acceptcreditcards: sub.invoicePrototype.acceptcreditcards,
-                    acceptpaypal: sub.invoicePrototype.acceptpaypal
-                },
-                items: sub.invoicePrototype.products,
-                subscriptionid: sub.subscriptionid
-            };
+                // Update next_invoice date for the subscription
+                if (subscription.nextInvoice) {
+                    const nextInvoiceDate = getNextSubscriptionDate(
+                        toDateString(subscription.nextInvoice), 
+                        subscription.frequency as SubscriptionFrequency
+                    );
 
-            // Save invoice
-            const result = await db.insert(schema.invoices)
-                .values({
-                    userid: invoiceData.userid,
-                    clientid: invoiceData.clientid,
-                    status: invoiceData.status,
-                    currency: invoiceData.options.currency,
-                    language: invoiceData.options.language,
-                    date: today_date,
-                    notes: invoiceData.options.notes || null,
-                    discount: invoiceData.options.discount ? invoiceData.options.discount.toString() : null,
-                    salestax: invoiceData.options.salestax?.rate ? invoiceData.options.salestax.rate.toString() : null,
-                    secondtax: invoiceData.options.secondtax?.rate ? invoiceData.options.secondtax.rate.toString() : null,
-                    acceptcreditcards: Boolean(invoiceData.options.acceptcreditcards) || false,
-                    acceptpaypal: Boolean(invoiceData.options.acceptpaypal) || false,
-                    subscriptionid: invoiceData.subscriptionid,
-                    products: invoiceData.items
-                })
-                .returning({ insertedId: schema.invoices.invoiceid });
-
-            const invoiceid = result[0]?.insertedId;
-            
-            if (invoiceid) {
-                // Send email
-                await sendInvoiceEmail(invoiceid.toString());
-
-                // Calculate next invoice date
-                const next_invoice = getNextSubscriptionDate(sub.start_date, sub.frequency);
-
-                // Update subscription
-                if (sub.end_date && next_invoice > sub.end_date) {
-                    // If next invoice would be after end date, pause the subscription
                     await db.update(schema.subscriptions)
-                        .set({ status: 'Paused' })
-                        .where(eq(schema.subscriptions.subscriptionid, sub.subscriptionid));
-                } else {
-                    // Update next invoice date
-                    await db.update(schema.subscriptions)
-                        .set({ nextInvoice: next_invoice })
-                        .where(eq(schema.subscriptions.subscriptionid, sub.subscriptionid));
+                        .set({ nextInvoice: new Date(nextInvoiceDate) })
+                        .where(eq(schema.subscriptions.subscriptionid, subscription.subscriptionid));
                 }
+
+            } catch (error) {
+                console.error(`Error processing subscription ${subscription.subscriptionid}:`, error);
+                // Continue with next subscription even if one fails
             }
         }
 
-        return c.json({ success: true, message: "Invoices processed successfully" });
+        return c.json({ 
+            success: true, 
+            message: `Processed ${subscriptions.length} subscriptions`,
+            processedCount: subscriptions.length
+        });
+
     } catch (error) {
         console.error("Error processing subscriptions:", error);
-        return c.json({ error: "Failed to process subscriptions" }, 500);
+        return c.json({ 
+            error: "Failed to process subscriptions",
+            details: error instanceof Error ? error.message : "Unknown error"
+        }, 500);
     }
 }

@@ -6,6 +6,8 @@ import { eq } from 'drizzle-orm';
 export async function GET(c: Context) {
     try {
         const id = c.req.param('id');
+        const timezone = c.req.query('timezone') || 'UTC';
+        console.log('timezone', timezone);
         
         if (!id) {
             return c.text('Invoice ID not provided', 400);
@@ -73,10 +75,12 @@ export async function GET(c: Context) {
         // Calculate total
         const total = afterDiscount + salestaxAmount + secondtaxAmount;
 
+        // Format date in user's timezone for PDF
         const formattedDate = new Date(date).toLocaleDateString('en-US', {
             month: 'long',
             day: 'numeric',
             year: 'numeric',
+            timeZone: timezone
         });
 
         const doc = new jsPDF({

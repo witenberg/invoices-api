@@ -1,17 +1,45 @@
 /**
- * Date utility functions for consistent UTC date handling
+ * Date utility functions for consistent date handling
+ * Note: PostgreSQL TIMESTAMP WITH TIME ZONE automatically converts to UTC
  */
+
+/**
+ * Returns current timestamp
+ */
+export function getCurrentTimestamp(): Date {
+  return new Date();
+}
+
+/**
+ * Returns current timestamp in UTC (alias for getCurrentTimestamp)
+ */
+export function getCurrentTimestampUTC(): Date {
+  return new Date();
+}
+
+/**
+ * Returns current date as YYYY-MM-DD format
+ */
+export function getCurrentDate(): string {
+  const now = new Date();
+  return now.toISOString().split('T')[0];
+}
 
 /**
  * Returns current date in UTC as YYYY-MM-DD format
  */
 export function getCurrentDateUTC(): string {
   const now = new Date();
-  return new Date(Date.UTC(
-    now.getUTCFullYear(),
-    now.getUTCMonth(),
-    now.getUTCDate()
-  )).toISOString().split('T')[0];
+  return now.toISOString().split('T')[0];
+}
+
+/**
+ * Converts a date to YYYY-MM-DD format
+ * @param date JavaScript Date object or date string
+ */
+export function toDateString(date: string | Date): string {
+  const d = new Date(date);
+  return d.toISOString().split('T')[0];
 }
 
 /**
@@ -20,15 +48,29 @@ export function getCurrentDateUTC(): string {
  */
 export function toUTCDateString(date: string | Date): string {
   const d = new Date(date);
-  return new Date(Date.UTC(
-    d.getUTCFullYear(),
-    d.getUTCMonth(),
-    d.getUTCDate()
-  )).toISOString().split('T')[0];
+  return d.toISOString().split('T')[0];
 }
 
 /**
- * Adds days to a date and returns UTC date string
+ * Converts a date string to Date object
+ * @param dateString Date string in YYYY-MM-DD format
+ */
+export function dateStringToDate(dateString: string): Date {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+/**
+ * Converts a date string to UTC timestamp at midnight
+ * @param dateString Date string in YYYY-MM-DD format
+ */
+export function dateStringToUTCTimestamp(dateString: string): Date {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+/**
+ * Adds days to a date and returns date string
  * @param date JavaScript Date object or date string
  * @param days Number of days to add
  */
@@ -39,7 +81,7 @@ export function addDaysToDate(date: Date | string, days: number): string {
 }
 
 /**
- * Adds months to a date and returns UTC date string
+ * Adds months to a date and returns date string
  * @param date JavaScript Date object or date string
  * @param months Number of months to add
  */
@@ -49,24 +91,65 @@ export function addMonthsToDate(date: Date | string, months: number): string {
   return result.toISOString().split('T')[0];
 }
 
-export function formatDateForDisplay(date: string, timeZone: string): string {
-  const d = new Date(date);
-  return d.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    timeZone
-  });
+/**
+ * Gets the start of day for a given date
+ * @param date Date object
+ */
+export function getStartOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-export function formatDateTimeForDisplay(date: string, timeZone: string): string {
-  const d = new Date(date);
-  return d.toLocaleString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone
-  });
+/**
+ * Gets the start of day in UTC for a given timestamp
+ * @param timestamp UTC timestamp
+ */
+export function getStartOfDayUTC(timestamp: Date): Date {
+  return new Date(Date.UTC(
+    timestamp.getUTCFullYear(),
+    timestamp.getUTCMonth(),
+    timestamp.getUTCDate()
+  ));
+}
+
+/**
+ * Gets the end of day for a given date
+ * @param date Date object
+ */
+export function getEndOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+}
+
+/**
+ * Gets the end of day in UTC for a given timestamp
+ * @param timestamp UTC timestamp
+ */
+export function getEndOfDayUTC(timestamp: Date): Date {
+  return new Date(Date.UTC(
+    timestamp.getUTCFullYear(),
+    timestamp.getUTCMonth(),
+    timestamp.getUTCDate(),
+    23, 59, 59, 999
+  ));
+}
+
+/**
+ * Adds days to a UTC timestamp
+ * @param timestamp UTC timestamp
+ * @param days Number of days to add
+ */
+export function addDaysToTimestamp(timestamp: Date, days: number): Date {
+  const result = new Date(timestamp);
+  result.setUTCDate(result.getUTCDate() + days);
+  return result;
+}
+
+/**
+ * Adds months to a UTC timestamp
+ * @param timestamp UTC timestamp
+ * @param months Number of months to add
+ */
+export function addMonthsToTimestamp(timestamp: Date, months: number): Date {
+  const result = new Date(timestamp);
+  result.setUTCMonth(result.getUTCMonth() + months);
+  return result;
 } 

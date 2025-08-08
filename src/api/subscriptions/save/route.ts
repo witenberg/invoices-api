@@ -3,12 +3,12 @@ import { createDB, schema } from '../../../db/db';
 import { eq } from 'drizzle-orm';
 import { getNextSubscriptionDate } from '../../../actions/subscriptions';
 import { sendInvoiceEmail } from '../../../actions/email';
+import { getCurrentTimestamp, dateStringToDate, getStartOfDay } from '../../../utils/dateUtils';
 
 export async function POST(c: Context) {
   try {
     const sub = await c.req.json();
-    // console.log(sub)
-    const today = new Date().toISOString().split("T")[0];
+    const todayStart = getStartOfDay(getCurrentTimestamp());
 
     // Validate required fields
     if (!sub.start_date || !sub.frequency || !sub.invoicePrototype) {
@@ -17,170 +17,138 @@ export async function POST(c: Context) {
 
     const db = createDB();
     let subid = sub.subscriptionid ? sub.subscriptionid : undefined;
-    const isEditMode = !!subid;  // Sprawdzamy, czy jest to edycja istniejącej subskrypcji
+    const isEditMode = !!subid;
     
-    let nextInvoice: string | null;
+    let nextInvoice: Date | null;
     let shouldCreateInvoice = false;
+
+    // Convert date strings to Date objects
+    const startDate = dateStringToDate(sub.start_date);
+    const endDate = sub.end_date ? dateStringToDate(sub.end_date) : null;
 
     // Ustalamy wartość nextInvoice
     if (isEditMode && sub.next_invoice) {
       // W trybie edycji używamy przekazanej wartości next_invoice
-      nextInvoice = sub.next_invoice;
+      nextInvoice = dateStringToDate(sub.next_invoice);
       
       // Jeśli użytkownik ustawił next_invoice na dzisiaj, tworzymy fakturę i aktualizujemy next_invoice
-      if (nextInvoice === today) {
+      if (getStartOfDay(nextInvoice).getTime() === todayStart.getTime()) {
         shouldCreateInvoice = true;
         // Aktualizujemy next_invoice na następną datę po dzisiejszej
-        nextInvoice = getNextSubscriptionDate(today, sub.frequency);
+        const nextDateString = getNextSubscriptionDate(sub.next_invoice, sub.frequency);
+        nextInvoice = dateStringToDate(nextDateString);
       }
-    } else if (sub.start_date === today) {
+    } else if (getStartOfDay(startDate).getTime() === todayStart.getTime()) {
       // Dla nowych subskrypcji zaczynających się dzisiaj, ustalamy następną datę
-      nextInvoice = getNextSubscriptionDate(sub.start_date, sub.frequency);
+      const nextDateString = getNextSubscriptionDate(sub.start_date, sub.frequency);
+      nextInvoice = dateStringToDate(nextDateString);
       shouldCreateInvoice = !isEditMode; // Tylko dla nowych subskrypcji
     } else {
       // Dla nowych subskrypcji zaczynających się w przyszłości, pierwsza faktura to data startowa
-      nextInvoice = sub.start_date;
+      nextInvoice = startDate;
     }
 
     // Sprawdzamy czy nextInvoice nie jest po endDate
-    if (sub.end_date && nextInvoice && nextInvoice > sub.end_date) {
+    if (endDate && nextInvoice && nextInvoice > endDate) {
       nextInvoice = null;
       sub.status = 'Paused';
     }
 
-    // Convert products to the format needed for DB storage
-    const products = sub.invoicePrototype.products.map((item: any) => ({
-      id: item.id,
-      name: item.name,
-      amount: item.amount ? item.amount.toString() : "0",
-      quantity: item.quantity ? item.quantity.toString() : "1"
-    }));
-
-    // Calculate total from products
-    let subtotal = 0;
-    products.forEach((product: any) => {
-      const amount = parseFloat(product.amount);
-      const quantity = parseInt(product.quantity);
-      subtotal += amount * quantity;
-    });
-
-    // Apply discount if exists
-    const discountRate = sub.invoicePrototype.discount 
-      ? parseFloat(sub.invoicePrototype.discount.toString()) / 100 
-      : 0;
-    let total = subtotal * (1 - discountRate);
-
-    // Apply sales tax if exists
-    const salesTaxRate = sub.invoicePrototype.salestax 
-      ? parseFloat(sub.invoicePrototype.salestax.toString()) / 100 
-      : 0;
-    total = total * (1 + salesTaxRate);
-
-    // Apply second tax if exists
-    const secondTaxRate = sub.invoicePrototype.secondtax 
-      ? parseFloat(sub.invoicePrototype.secondtax.toString()) / 100 
-      : 0;
-    total = total * (1 + secondTaxRate);
-
-    // Round to 2 decimal places
-    total = Math.round(total * 100) / 100;
-
-    // Transform the subscription data to match the database schema
     const subscriptionData = {
-      userid: sub.invoicePrototype.userid,
-      clientid: sub.invoicePrototype.clientid,
-      status: sub.status || 'Active',
+      userid: sub.userid,
+      clientid: sub.clientid,
       currency: sub.invoicePrototype.currency,
       language: sub.invoicePrototype.language,
-      notes: sub.invoicePrototype.notes || null,
+      notes: sub.notes || null,
       discount: sub.invoicePrototype.discount ? sub.invoicePrototype.discount.toString() : null,
-      salestax: sub.invoicePrototype.salestax ? sub.invoicePrototype.salestax.toString() : null,
-      salestaxname: sub.invoicePrototype.salestaxname || null,
-      secondtax: sub.invoicePrototype.secondtax ? sub.invoicePrototype.secondtax.toString() : null,
-      secondtaxname: sub.invoicePrototype.secondtaxname || null,
-      acceptcreditcards: Boolean(sub.invoicePrototype.acceptcreditcards),
-      acceptpaypal: Boolean(sub.invoicePrototype.acceptpaypal),
-      startDate: sub.start_date,
+      salestax: sub.invoicePrototype.salestax?.rate ? sub.invoicePrototype.salestax.rate.toString() : null,
+      salestaxname: sub.invoicePrototype.salestax?.name || null,
+      secondtax: sub.invoicePrototype.secondtax?.rate ? sub.invoicePrototype.secondtax.rate.toString() : null,
+      secondtaxname: sub.invoicePrototype.secondtax?.name || null,
+      acceptcreditcards: Boolean(sub.invoicePrototype.acceptcreditcards) || false,
+      acceptpaypal: Boolean(sub.invoicePrototype.acceptpaypal) || false,
+      startDate: startDate,
+      daysToPay: sub.invoicePrototype.daysToPay || null,
       frequency: sub.frequency,
-      endDate: sub.end_date || null,
+      endDate: endDate,
+      status: sub.status,
       nextInvoice: nextInvoice,
-      daysToPay: sub.days_to_pay ? sub.days_to_pay.toString() : null,
-      products: products,
-      total: total.toString(),
-      enable_reminders: sub.enable_reminders || false,
-      reminder_days_before: sub.reminder_days_before || null,
+      products: sub.invoicePrototype.items.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        amount: item.amount ? parseFloat(item.amount.toString()) : 0,
+        quantity: item.quantity ? parseInt(item.quantity.toString()) : 1
+      })),
+      total: sub.invoicePrototype.total ? sub.invoicePrototype.total.toString() : null,
+      enable_reminders: sub.invoicePrototype.enable_reminders || false,
+      reminder_days_before: sub.invoicePrototype.reminder_days_before || null,
     };
 
-    let savedSubId: string;
     if (subid) {
       // Update existing subscription
-      const updateResult = await db.update(schema.subscriptions)
+      await db.update(schema.subscriptions)
         .set(subscriptionData)
-        .where(eq(schema.subscriptions.subscriptionid, subid))
-        .returning({ updatedId: schema.subscriptions.subscriptionid });
-      savedSubId = updateResult[0]?.updatedId ?? subid; // Use existing subid if update didn't return one
+        .where(eq(schema.subscriptions.subscriptionid, subid));
     } else {
       // Create new subscription
-      const insertResult = await db.insert(schema.subscriptions)
+      const result = await db.insert(schema.subscriptions)
         .values(subscriptionData)
         .returning({ insertedId: schema.subscriptions.subscriptionid });
-      savedSubId = insertResult[0]?.insertedId;
-      if (!savedSubId) {
-        throw new Error("Failed to retrieve subscription ID after insertion.");
+      subid = result[0]?.insertedId;
+    }
+
+    // Create invoice if needed
+    if (shouldCreateInvoice && subid) {
+      const invoiceData = {
+        userid: sub.userid,
+        clientid: sub.clientid,
+        status: 'Sent',
+        currency: sub.invoicePrototype.currency,
+        language: sub.invoicePrototype.language,
+        date: getCurrentTimestamp(),
+        payment_date: sub.invoicePrototype.daysToPay ? 
+          new Date(getCurrentTimestamp().getTime() + sub.invoicePrototype.daysToPay * 24 * 60 * 60 * 1000) : null,
+        notes: sub.notes || null,
+        discount: sub.invoicePrototype.discount ? sub.invoicePrototype.discount.toString() : null,
+        salestax: sub.invoicePrototype.salestax?.rate ? sub.invoicePrototype.salestax.rate.toString() : null,
+        salestaxname: sub.invoicePrototype.salestax?.name || null,
+        secondtax: sub.invoicePrototype.secondtax?.rate ? sub.invoicePrototype.secondtax.rate.toString() : null,
+        secondtaxname: sub.invoicePrototype.secondtax?.name || null,
+        acceptcreditcards: Boolean(sub.invoicePrototype.acceptcreditcards) || false,
+        acceptpaypal: Boolean(sub.invoicePrototype.acceptpaypal) || false,
+        subscriptionid: subid,
+        products: sub.invoicePrototype.items.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          amount: item.amount ? parseFloat(item.amount.toString()) : 0,
+          quantity: item.quantity ? parseInt(item.quantity.toString()) : 1
+        })),
+        total: sub.invoicePrototype.total ? sub.invoicePrototype.total.toString() : null,
+        enable_reminders: sub.invoicePrototype.enable_reminders || false,
+        reminder_days_before: sub.invoicePrototype.reminder_days_before || null,
+      };
+
+      const invoiceResult = await db.insert(schema.invoices)
+        .values(invoiceData)
+        .returning({ insertedId: schema.invoices.invoiceid });
+
+      const invoiceId = invoiceResult[0]?.insertedId;
+      if (invoiceId) {
+        await sendInvoiceEmail(invoiceId.toString());
+        
+        // Set sent_at to current timestamp
+        await db.update(schema.invoices)
+          .set({ sent_at: getCurrentTimestamp() })
+          .where(eq(schema.invoices.invoiceid, invoiceId));
       }
     }
 
-    // Create and send invoice if needed
-    if (shouldCreateInvoice) {
-        // Construct invoice data directly
-        const invoiceData = {
-            userid: subscriptionData.userid,
-            clientid: subscriptionData.clientid,
-            status: 'Sent', // Set status directly
-            currency: subscriptionData.currency,
-            language: subscriptionData.language,
-            notes: subscriptionData.notes,
-            discount: subscriptionData.discount,
-            salestax: subscriptionData.salestax,
-            salestaxname: subscriptionData.salestaxname,
-            secondtax: subscriptionData.secondtax,
-            secondtaxname: subscriptionData.secondtaxname,
-            acceptcreditcards: subscriptionData.acceptcreditcards,
-            acceptpaypal: subscriptionData.acceptpaypal,
-            date: today, // Use today's date string
-            subscriptionid: savedSubId, // Link to the saved subscription
-            products: subscriptionData.products, // Use already formatted products
-            total: subscriptionData.total, // Use the same calculated total
-            payment_date: subscriptionData.daysToPay ? 
-              new Date(new Date(today).getTime() + parseInt(subscriptionData.daysToPay) * 24 * 60 * 60 * 1000)
-                .toISOString().split("T")[0] : 
-              null
-        };
-
-        // Insert invoice directly into the database
-        const invoiceResult = await db.insert(schema.invoices)
-            .values(invoiceData)
-            .returning({ invoiceid: schema.invoices.invoiceid });
-        
-        const newInvoiceId = invoiceResult[0]?.invoiceid;
-
-        if (newInvoiceId) {
-            await sendInvoiceEmail(newInvoiceId.toString());
-        } else {
-            console.error(`Failed to create or retrieve invoice ID for subscription ${savedSubId}.`);
-            // Consider if you want to throw an error here or just log
-        }
-    }
-
-    return c.json({
-      success: true,
-      subid: savedSubId, // Return the saved/updated subscription ID
-    });
+    return c.json({ success: true, subscriptionid: subid });
   } catch (error) {
     console.error("Error saving subscription:", error);
-    return c.json({
-      error: "Failed to save subscription",
-      details: error instanceof Error ? error.message : "Unknown error"
+    return c.json({ 
+        error: "Failed to save subscription",
+        details: error instanceof Error ? error.message : "Unknown error"
     }, 500);
   }
 }

@@ -1,12 +1,11 @@
 import { Context } from 'hono';
 import { createDB, schema } from '../../db/db';
 import { eq, and, isNull, lte, gte, sql } from 'drizzle-orm';
-import { getCurrentDateUTC, toUTCDateString } from '../../utils/dateUtils';
+import { getCurrentTimestamp, getStartOfDay, addDaysToDate } from '../../utils/dateUtils';
 import { sendInvoiceEmail } from '../../actions/email';
 
 export async function POST(c: Context) {
-    const today_date = getCurrentDateUTC();
-    // console.log("today_date", today_date);
+    const todayStart = getStartOfDay(getCurrentTimestamp());
 
     try {
         const db = createDB();
@@ -19,11 +18,10 @@ export async function POST(c: Context) {
                     eq(schema.invoices.status, 'Sent'),
                     eq(schema.invoices.enable_reminders, true),
                     isNull(schema.invoices.last_reminder_sent),
-                    gte(schema.invoices.payment_date, today_date),
-                    sql`${schema.invoices.payment_date}::date - ${today_date}::date = coalesce(${schema.invoices.reminder_days_before}, 0)`
+                    gte(schema.invoices.payment_date, todayStart),
+                    sql`${schema.invoices.payment_date}::timestamp - ${todayStart}::timestamp = (coalesce(${schema.invoices.reminder_days_before}, 0) * interval '1 day')`
                 )
             );
-        // console.log("invoices", invoices);
 
         if (invoices.length === 0) {
             return c.json({ success: false, message: "No reminders to process today" });
@@ -37,7 +35,7 @@ export async function POST(c: Context) {
 
                 // Update last reminder sent timestamp
                 await db.update(schema.invoices)
-                    .set({ last_reminder_sent: new Date() })
+                    .set({ last_reminder_sent: getCurrentTimestamp() })
                     .where(eq(schema.invoices.invoiceid, invoice.invoiceid));
             } catch (error) {
                 console.error(`Error processing reminder for invoice ${invoice.invoiceid}:`, error);
@@ -45,9 +43,17 @@ export async function POST(c: Context) {
             }
         }
 
-        return c.json({ success: true, message: "Reminders processed successfully" });
+        return c.json({ 
+            success: true, 
+            message: `Processed ${invoices.length} reminders`,
+            processedCount: invoices.length
+        });
+
     } catch (error) {
         console.error("Error processing reminders:", error);
-        return c.json({ error: "Failed to process reminders" }, 500);
+        return c.json({ 
+            error: "Failed to process reminders",
+            details: error instanceof Error ? error.message : "Unknown error"
+        }, 500);
     }
 } 

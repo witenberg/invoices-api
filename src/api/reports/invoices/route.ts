@@ -1,9 +1,9 @@
 import { Context } from 'hono';
 import { createDB, schema } from '../../../db/db';
-import { and, eq, or, gte } from 'drizzle-orm';
+import { and, eq, or, gte, lt } from 'drizzle-orm';
 import { format, subMonths } from 'date-fns';
 import { sql } from 'drizzle-orm';
-import { toUTCDateString } from '../../../utils/dateUtils';
+import { getCurrentTimestamp, getStartOfDay } from '../../../utils/dateUtils';
 
 export async function GET(c: Context) {
   const db = createDB();
@@ -22,14 +22,11 @@ export async function GET(c: Context) {
     const endDate = new Date();
     const startDate = subMonths(endDate, 11);
     
-    // Format dates as YYYY-MM-DD strings
-    const startDateStr = format(startDate, 'yyyy-MM-dd');
-    
     // Build the base conditions
     const conditions = [
       eq(schema.invoices.userid, userId),
       eq(schema.invoices.currency, currency),
-      gte(schema.invoices.date, startDateStr),
+      gte(schema.invoices.date, startDate),
       or(
         eq(schema.invoices.status, 'Sent'),
         eq(schema.invoices.status, 'Paid')
@@ -86,12 +83,6 @@ export async function GET(c: Context) {
     const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, 1);
     const twelveMonthsAgo = new Date(today.getFullYear() - 1, today.getMonth(), 1);
 
-    // Convert dates to ISO strings for PostgreSQL
-    const startOfMonthStr = toUTCDateString(startOfMonth);
-    const startOfLastMonthStr = toUTCDateString(startOfLastMonth);
-    const threeMonthsAgoStr = toUTCDateString(threeMonthsAgo);
-    const twelveMonthsAgoStr = toUTCDateString(twelveMonthsAgo);
-
     // Helper function to calculate total from products JSONB
     const totalCalculation = sql<number>`
       sum(
@@ -101,84 +92,96 @@ export async function GET(c: Context) {
         )
       )`;
 
-    // Month to date
-    const monthToDate = await db
-      .select({
-        total: totalCalculation
-      })
+    // Get current month total
+    const currentMonthResult = await db
+      .select({ total: totalCalculation })
       .from(schema.invoices)
-      .where(sql`${schema.invoices.userid}::text = ${userId}
-        AND ${schema.invoices.currency} = ${currency}
-        AND ${schema.invoices.date} >= ${startOfMonthStr}`);
+      .where(
+        and(
+          eq(schema.invoices.userid, userId),
+          eq(schema.invoices.currency, currency),
+          gte(schema.invoices.date, startOfMonth),
+          or(
+            eq(schema.invoices.status, 'Sent'),
+            eq(schema.invoices.status, 'Paid')
+          )
+        )
+      );
 
-    // Current month (full)
-    const currentMonth = await db
-      .select({
-        total: totalCalculation
-      })
+    // Get last month total
+    const lastMonthResult = await db
+      .select({ total: totalCalculation })
       .from(schema.invoices)
-      .where(sql`${schema.invoices.userid}::text = ${userId}
-        AND ${schema.invoices.currency} = ${currency}
-        AND ${schema.invoices.date} >= ${startOfLastMonthStr}
-        AND ${schema.invoices.date} < ${startOfMonthStr}`);
+      .where(
+        and(
+          eq(schema.invoices.userid, userId),
+          eq(schema.invoices.currency, currency),
+          gte(schema.invoices.date, startOfLastMonth),
+          lt(schema.invoices.date, startOfMonth),
+          or(
+            eq(schema.invoices.status, 'Sent'),
+            eq(schema.invoices.status, 'Paid')
+          )
+        )
+      );
 
-    // Last 3 months
-    const lastThreeMonths = await db
-      .select({
-        total: totalCalculation
-      })
+    // Get 3 months total
+    const threeMonthsResult = await db
+      .select({ total: totalCalculation })
       .from(schema.invoices)
-      .where(sql`${schema.invoices.userid}::text = ${userId}
-        AND ${schema.invoices.currency} = ${currency}
-        AND ${schema.invoices.date} >= ${threeMonthsAgoStr}`);
+      .where(
+        and(
+          eq(schema.invoices.userid, userId),
+          eq(schema.invoices.currency, currency),
+          gte(schema.invoices.date, threeMonthsAgo),
+          or(
+            eq(schema.invoices.status, 'Sent'),
+            eq(schema.invoices.status, 'Paid')
+          )
+        )
+      );
 
-    // Last 12 months
-    const lastTwelveMonths = await db
-      .select({
-        total: totalCalculation
-      })
+    // Get 12 months total
+    const twelveMonthsResult = await db
+      .select({ total: totalCalculation })
       .from(schema.invoices)
-      .where(sql`${schema.invoices.userid}::text = ${userId}
-        AND ${schema.invoices.currency} = ${currency}
-        AND ${schema.invoices.date} >= ${twelveMonthsAgoStr}`);
+      .where(
+        and(
+          eq(schema.invoices.userid, userId),
+          eq(schema.invoices.currency, currency),
+          gte(schema.invoices.date, twelveMonthsAgo),
+          or(
+            eq(schema.invoices.status, 'Sent'),
+            eq(schema.invoices.status, 'Paid')
+          )
+        )
+      );
 
-    // All time
-    const allTime = await db
-      .select({
-        total: totalCalculation
-      })
-      .from(schema.invoices)
-      .where(sql`${schema.invoices.userid}::text = ${userId}
-        AND ${schema.invoices.currency} = ${currency}`);
-
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
+    const currentMonthTotal = currentMonthResult[0]?.total || 0;
+    const lastMonthTotal = lastMonthResult[0]?.total || 0;
+    const threeMonthsTotal = threeMonthsResult[0]?.total || 0;
+    const twelveMonthsTotal = twelveMonthsResult[0]?.total || 0;
 
     return c.json({
-      chart: {
+      success: true,
+      data: {
         labels,
         values,
         counts,
-        currency
-      },
-      statistics: {
-        monthToDate: Number(monthToDate[0]?.total || 0),
-        currentMonth: {
-          value: Number(currentMonth[0]?.total || 0),
-          month: monthNames[startOfLastMonth.getMonth()],
-          year: startOfLastMonth.getFullYear()
-        },
-        lastThreeMonths: Number(lastThreeMonths[0]?.total || 0),
-        lastTwelveMonths: Number(lastTwelveMonths[0]?.total || 0),
-        allTime: Number(allTime[0]?.total || 0),
-        currency
+        statistics: {
+          currentMonth: currentMonthTotal,
+          lastMonth: lastMonthTotal,
+          threeMonths: threeMonthsTotal,
+          twelveMonths: twelveMonthsTotal
+        }
       }
     });
 
   } catch (error) {
-    console.error('Error fetching report data:', error);
-    return c.json({ error: 'Failed to fetch report data' }, 500);
+    console.error("Error generating invoice report:", error);
+    return c.json({ 
+      error: "Failed to generate invoice report",
+      details: error instanceof Error ? error.message : "Unknown error"
+    }, 500);
   }
 } 

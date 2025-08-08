@@ -1,4 +1,4 @@
-import { pgSchema, varchar, boolean, numeric, text, timestamp, foreignKey, date, jsonb, uuid, integer } from "drizzle-orm/pg-core"
+import { pgSchema, varchar, boolean, numeric, text, timestamp, foreignKey, jsonb, uuid, integer } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const app = pgSchema("app");
@@ -24,11 +24,11 @@ export const usersInApp = app.table("users", {
 	paddleConnected: boolean("paddle_connected").default(false),
 	stripeAccountid: text("stripe_accountid"),
 	stripeConnected: boolean("stripe_connected").default(false),
-	trialEndDate: timestamp("trial_end_date"),
+	trialEndDate: timestamp("trial_end_date", { withTimezone: true }),
 	isTrialActive: boolean("is_trial_active").default(true).notNull(),
 	paddleSubscriptionId: varchar("paddle_subscription_id", { length: 255 }),
 	isSubscriptionActive: boolean("is_subscription_active").default(false),
-	subscriptionEndDate: timestamp("subscription_end_date"),
+	subscriptionEndDate: timestamp("subscription_end_date", { withTimezone: true }),
 	isTwoFactorEnabled: boolean("is_two_factor_enabled").default(false).notNull(),
 	twoFactorSecret: text("two_factor_secret"),
 });
@@ -55,7 +55,7 @@ export const logsInApp = app.table("logs", {
 	logid: uuid().defaultRandom().notNull().primaryKey(),
 	userid: uuid().notNull(),
 	action: text().notNull(),
-	timestamp: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	timestamp: timestamp("timestamp", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
 	foreignKey({
 			columns: [table.userid],
@@ -78,18 +78,18 @@ export const subscriptionsInApp = app.table("subscriptions", {
 	secondtaxname: varchar({ length: 255 }),
 	acceptcreditcards: boolean().default(false).notNull(),
 	acceptpaypal: boolean().default(false).notNull(),
-	startDate: date("start_date").notNull(),
+	startDate: timestamp("start_date", { withTimezone: true }).notNull(),
 	daysToPay: integer("days_to_pay"),
 	frequency: varchar({ length: 20 }).notNull(),
-	endDate: date("end_date"),
+	endDate: timestamp("end_date", { withTimezone: true }),
 	status: varchar({ length: 20 }).notNull(),
 	isDeleted: boolean("is_deleted").default(false),
-	nextInvoice: date("next_invoice"),
+	nextInvoice: timestamp("next_invoice", { withTimezone: true }),
 	products: jsonb().default([]).notNull(),
 	total: numeric({ precision: 10, scale: 2 }),
 	enable_reminders: boolean().default(false),
 	reminder_days_before: integer("reminder_days_before"),
-	last_reminder_sent: timestamp("last_reminder_sent"),
+	last_reminder_sent: timestamp("last_reminder_sent", { withTimezone: true }),
 }, (table) => [
 	foreignKey({
 			columns: [table.clientid],
@@ -111,10 +111,10 @@ export const invoicesInApp = app.table("invoices", {
 	isDeleted: boolean("is_deleted").default(false),
 	currency: varchar({ length: 10 }).notNull(),
 	language: varchar({ length: 20 }).notNull(),
-	date: date().default(sql`CURRENT_DATE`).notNull(),
-	payment_date: date("payment_date"),
-	opened_at: timestamp("opened_at"),
-	sent_at: timestamp("sent_at"),
+	date: timestamp("date", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	payment_date: timestamp("payment_date", { withTimezone: true }),
+	opened_at: timestamp("opened_at", { withTimezone: true }),
+	sent_at: timestamp("sent_at", { withTimezone: true }),
 	notes: text(),
 	discount: numeric({ precision: 10, scale:  2 }).default('0.00'),
 	salestax: numeric({ precision: 10, scale:  2 }),
@@ -128,7 +128,7 @@ export const invoicesInApp = app.table("invoices", {
 	total: numeric({ precision: 10, scale: 2 }),
 	enable_reminders: boolean().default(false),
 	reminder_days_before: integer("reminder_days_before"),
-	last_reminder_sent: timestamp("last_reminder_sent"),
+	last_reminder_sent: timestamp("last_reminder_sent", { withTimezone: true }),
 }, (table) => [
 	foreignKey({
 			columns: [table.clientid],
@@ -151,7 +151,7 @@ export const emailVerificationTokensInApp = app.table("email_verification_tokens
 	tokenid: uuid().defaultRandom().notNull().primaryKey(),
 	userid: uuid().notNull(),
 	token: varchar({ length: 255 }).notNull(),
-	expiresAt: timestamp("expires_at").notNull(),
+	expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.userid],
@@ -180,8 +180,8 @@ export const salesPagesInApp = app.table("sales_pages", {
 	second_tax_rate: numeric({ precision: 5, scale: 2 }),
 	status: varchar({ length: 15 }).default('Draft'),
 	isDeleted: boolean("is_deleted").default(false),
-	created_at: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
-	updated_at: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
+	created_at: timestamp("created_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`),
+	updated_at: timestamp("updated_at", { withTimezone: true }).default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
 	foreignKey({
 		columns: [table.userid],

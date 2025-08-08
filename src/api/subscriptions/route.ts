@@ -1,6 +1,7 @@
 import { Context } from 'hono';
 import { createDB, schema } from '../../db/db';
 import { eq, and, or } from 'drizzle-orm';
+import { toDateString } from '../../utils/dateUtils';
 
 export async function GET(c: Context) {
   const userId = c.req.query('userId');
@@ -68,7 +69,7 @@ export async function GET(c: Context) {
       // Format next invoice date safely
       let nextInvoiceDate = null;
       if (subscription.nextInvoice) {
-        nextInvoiceDate = subscription.nextInvoice.toString().split('T')[0];
+        nextInvoiceDate = toDateString(subscription.nextInvoice);
       }
 
       // If subscription is deleted, show status as "Deleted"

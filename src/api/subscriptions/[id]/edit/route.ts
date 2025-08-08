@@ -1,6 +1,7 @@
 import { Context } from 'hono';
 import { createDB, schema } from '../../../../db/db';
 import { eq } from 'drizzle-orm';
+import { toDateString } from '../../../../utils/dateUtils';
 
 // Import existing types from the shared types directory
 import type { Subscription, SubscriptionFrequency, SubscriptionStatus } from '../../../../types/subscription';
@@ -57,14 +58,14 @@ export async function GET(c: Context) {
         // Construct the response data matching the Subscription type structure
         const subDataForEdit: Subscription = {
             subscriptionid: subscriptionFromDb.subscriptionid,
-            start_date: subscriptionFromDb.startDate, // YYYY-MM-DD string
+            start_date: toDateString(subscriptionFromDb.startDate), // Convert Date to YYYY-MM-DD string
             days_to_pay: subscriptionFromDb.daysToPay || undefined,
             enable_reminders: subscriptionFromDb.enable_reminders || false,
             reminder_days_before: subscriptionFromDb.reminder_days_before || undefined,
             frequency: subscriptionFromDb.frequency as SubscriptionFrequency,
-            end_date: subscriptionFromDb.endDate || undefined, // YYYY-MM-DD string or undefined
+            end_date: subscriptionFromDb.endDate ? toDateString(subscriptionFromDb.endDate) : undefined, // Convert Date to YYYY-MM-DD string
             status: subscriptionFromDb.status as SubscriptionStatus,
-            next_invoice: subscriptionFromDb.nextInvoice || undefined, // YYYY-MM-DD string or undefined
+            next_invoice: subscriptionFromDb.nextInvoice ? toDateString(subscriptionFromDb.nextInvoice) : undefined, // Convert Date to YYYY-MM-DD string
             // Construct the invoicePrototype part according to the InvoicePrototype structure
             invoicePrototype: {
                 userid: subscriptionFromDb.userid,

@@ -1,15 +1,13 @@
 import { Context } from 'hono';
 import { createDB, schema } from '../../../db/db';
 import { eq } from 'drizzle-orm';
-import type { Invoice } from '../../../types/invoice';
-import { InvoiceItem } from '../../../types/invoiceItem';
+import { getCurrentTimestamp, dateStringToDate, getStartOfDay } from '../../../utils/dateUtils';
 import { sendInvoiceEmail } from '../../../actions/email';
-import { getCurrentDateUTC, toUTCDateString } from '../../../utils/dateUtils';
+import { InvoiceItem } from '../../../types/invoiceItem';
 
 export async function POST(c: Context) {
   try {
-    const invoice = await c.req.json<Invoice>();
-
+    const invoice = await c.req.json();
     const db = createDB();
     let invoiceid = invoice.invoiceid ? invoice.invoiceid : undefined;
 
@@ -42,8 +40,8 @@ export async function POST(c: Context) {
       status: invoice.status,
       currency: invoice.options.currency,
       language: invoice.options.language,
-      date: invoice.options.date ? toUTCDateString(invoice.options.date) : getCurrentDateUTC(),
-      payment_date: invoice.options.payment_date ? toUTCDateString(invoice.options.payment_date) : null,
+      date: invoice.date ? dateStringToDate(invoice.date) : getCurrentTimestamp(),
+      payment_date: invoice.payment_date ? dateStringToDate(invoice.payment_date) : null,
       notes: invoice.options.notes || null,
       discount: invoice.options.discount ? invoice.options.discount.toString() : null,
       salestax: invoice.options.salestax?.rate ? invoice.options.salestax.rate.toString() : null,
@@ -64,13 +62,13 @@ export async function POST(c: Context) {
       reminder_days_before: invoice.options.reminder_days_before || null,
     };
 
-    let savedInvoiceId: string | undefined = invoiceid;
+    let savedInvoiceId = invoice.invoiceid;
 
-    if (invoiceid) {
+    if (invoice.invoiceid) {
       // Update existing invoice
       await db.update(schema.invoices)
         .set(invoiceData)
-        .where(eq(schema.invoices.invoiceid, invoiceid));
+        .where(eq(schema.invoices.invoiceid, invoice.invoiceid));
     } else {
       // Create new invoice
       const result = await db.insert(schema.invoices)
@@ -82,14 +80,16 @@ export async function POST(c: Context) {
       }
     }
 
-    const currentDate = getCurrentDateUTC();
+    const currentTimestamp = getCurrentTimestamp();
+    const currentDateStart = getStartOfDay(currentTimestamp);
+    
     // Only send email for new invoices being sent, not for updates
-    if (invoice.options.date === currentDate && savedInvoiceId && invoice.status === 'Sent' && !invoiceid) {
+    if (invoiceData.date && getStartOfDay(invoiceData.date).getTime() === currentDateStart.getTime() && savedInvoiceId && invoice.status === 'Sent' && !invoice.invoiceid) {
       await sendInvoiceEmail(savedInvoiceId.toString());
       
       // Set sent_at to current timestamp
       await db.update(schema.invoices)
-        .set({ sent_at: new Date() })
+        .set({ sent_at: currentTimestamp })
         .where(eq(schema.invoices.invoiceid, savedInvoiceId));
     }
 

@@ -1,25 +1,21 @@
 import { Context } from 'hono';
 import { createDB, schema } from '../../db/db';
 import { eq, and, lt } from 'drizzle-orm';
+import { getCurrentTimestamp, getStartOfDay } from '../../utils/dateUtils';
 
 export async function POST(c: Context) {
   try {
     const db = createDB();
     
-    // Get current date in UTC
-    const now = new Date();
-    const todayUTC = new Date(Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate()
-    )).toISOString().split('T')[0];
+    // Get current date
+    const today = getStartOfDay(getCurrentTimestamp());
 
     // Find all invoices with payment_date LESS THAN today and status 'Sent'
     const overdueInvoices = await db.select()
       .from(schema.invoices)
       .where(
         and(
-          lt(schema.invoices.payment_date, todayUTC),
+          lt(schema.invoices.payment_date, today),
           eq(schema.invoices.status, 'Sent')
         )
       );
@@ -37,7 +33,7 @@ export async function POST(c: Context) {
       .set({ status: 'Overdue' })
       .where(
         and(
-          lt(schema.invoices.payment_date, todayUTC),
+          lt(schema.invoices.payment_date, today),
           eq(schema.invoices.status, 'Sent')
         )
       )

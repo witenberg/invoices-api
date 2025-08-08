@@ -74,17 +74,9 @@ export async function GET(c: Context) {
         // Calculate total
         const total = (afterDiscount + salestaxAmount + secondtaxAmount).toFixed(2);
 
-        // Format date
-        const formattedDate = new Date(invoice.date).toLocaleDateString('en-US', {
-            month: 'long',
-            day: 'numeric',
-            year: 'numeric',
-        });
-
         const invoiceData = {
             invoiceid: invoice.invoiceid,
-            date: invoice.date.toString().split('T')[0],
-            formattedDate,
+            date: invoice.date, // Return UTC timestamp for frontend to format
             currency: invoice.currency,
             products,
             subtotal: subtotal.toFixed(2),
