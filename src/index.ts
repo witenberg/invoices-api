@@ -120,7 +120,19 @@ app.use('/api/stripe/webhook', cors({
 
 // Default CORS configuration for other endpoints
 app.use('*', cors({
-	origin: ['http://localhost:3000', 'https://dev.invoices-apg.pages.dev'],
+	origin: (origin) => {
+		// Allow localhost for development
+		if (origin?.includes('localhost')) return origin;
+		
+		// Allow production and dev domains
+		if (origin === 'https://dev.invoices-apg.pages.dev') return origin;
+		
+		// Allow preview domains (e.g., https://a2405388.invoices-apg.pages.dev)
+		if (origin?.match(/https:\/\/[a-zA-Z0-9]+\.invoices-apg\.pages\.dev$/)) return origin;
+		
+		// Fallback for development
+		return 'http://localhost:3000';
+	},
 	allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
 	allowHeaders: ['Content-Type', 'Authorization'],
 	exposeHeaders: ['Content-Length', 'X-Requested-With'],
