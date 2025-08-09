@@ -52,12 +52,12 @@ export function toUTCDateString(date: string | Date): string {
 }
 
 /**
- * Converts a date string to Date object
+ * Converts a date string to Date object in UTC
  * @param dateString Date string in YYYY-MM-DD format
  */
 export function dateStringToDate(dateString: string): Date {
   const [year, month, day] = dateString.split('-').map(Number);
-  return new Date(year, month - 1, day);
+  return new Date(Date.UTC(year, month - 1, day));
 }
 
 /**

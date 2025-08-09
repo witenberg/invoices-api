@@ -39,6 +39,7 @@ export async function sendInvoiceEmail(invoiceid: string, isReminder: boolean = 
     }
 
     // Fetch user with custom message fields
+    console.log("Looking for user with userid:", invoice.userid);
     const user = await db.query.users.findFirst({
         where: eq(schema.users.userid, invoice.userid),
         columns: {
@@ -49,9 +50,10 @@ export async function sendInvoiceEmail(invoiceid: string, isReminder: boolean = 
             paidMessage: true
         }
     });
+    console.log("user", user);
 
     if (!user) {
-        console.error('Error fetching related data: User not found for invoice', invoiceid);
+        console.error('Error fetching related data: User not found for invoice', invoiceid, 'with userid:', invoice.userid);
         throw new Error(`User not found for invoice ID ${invoiceid}`);
     }
 

@@ -1,7 +1,7 @@
 import { Context } from 'hono';
 import { createDB, schema } from '../../../db/db';
 import { eq } from 'drizzle-orm';
-import { getCurrentTimestamp, dateStringToDate, getStartOfDay } from '../../../utils/dateUtils';
+import { getCurrentTimestamp, getStartOfDay } from '../../../utils/dateUtils';
 import { sendInvoiceEmail } from '../../../actions/email';
 import { InvoiceItem } from '../../../types/invoiceItem';
 
@@ -40,8 +40,8 @@ export async function POST(c: Context) {
       status: invoice.status,
       currency: invoice.options.currency,
       language: invoice.options.language,
-      date: invoice.date ? dateStringToDate(invoice.date) : getCurrentTimestamp(),
-      payment_date: invoice.payment_date ? dateStringToDate(invoice.payment_date) : null,
+      date: invoice.date ? new Date(invoice.date) : getCurrentTimestamp(),
+      payment_date: invoice.payment_date ? new Date(invoice.payment_date) : null,
       notes: invoice.options.notes || null,
       discount: invoice.options.discount ? invoice.options.discount.toString() : null,
       salestax: invoice.options.salestax?.rate ? invoice.options.salestax.rate.toString() : null,
