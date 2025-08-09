@@ -3,16 +3,19 @@ import { createDB, schema } from '../../db/db';
 import { eq, and, isNull, lte } from 'drizzle-orm';
 import type { SubscriptionFrequency } from '../../types/subscription';
 import { getNextSubscriptionDate } from '../../actions/subscriptions';
-import { getCurrentTimestamp, getStartOfDay, toDateString } from '../../utils/dateUtils';
+import { getCurrentTimestamp, getStartOfDay, toDateString, dateStringToUTCTimestamp, getStartOfDayUTC } from '../../utils/dateUtils';
 import { sendInvoiceEmail } from '../../actions/email';
 
 export async function POST(c: Context) {
-    const todayStart = getStartOfDay(getCurrentTimestamp());
+    // Use UTC time for consistent comparison with database timestamps
+    const todayStart = getStartOfDayUTC(getCurrentTimestamp());
+    
+    console.log(`Processing subscriptions - todayStart: ${todayStart.toISOString()}`);
 
     try {
         const db = createDB();
         
-        // Find active subscriptions with next_invoice date matching today
+        // Find active subscriptions with next_invoice date that is today or in the past
         const subscriptions = await db.select()
             .from(schema.subscriptions)
             .where(
@@ -74,10 +77,29 @@ export async function POST(c: Context) {
                         toDateString(subscription.nextInvoice), 
                         subscription.frequency as SubscriptionFrequency
                     );
+                    
+                    // Convert the date string to proper UTC timestamp for database storage
+                    const nextInvoiceTimestamp = dateStringToUTCTimestamp(nextInvoiceDate);
+                    
+                    console.log(`old date: ${subscription.nextInvoice}, new date: ${nextInvoiceDate}, new timestamp: ${nextInvoiceTimestamp}`);
 
-                    await db.update(schema.subscriptions)
-                        .set({ nextInvoice: new Date(nextInvoiceDate) })
-                        .where(eq(schema.subscriptions.subscriptionid, subscription.subscriptionid));
+                    // Check if the new nextInvoice date exceeds the subscription's end date
+                    if (subscription.endDate && nextInvoiceTimestamp > subscription.endDate) {
+                        // If next invoice would be after end date, pause the subscription
+                        console.log(`Subscription ${subscription.subscriptionid} ended - pausing (endDate: ${subscription.endDate})`);
+                        
+                        await db.update(schema.subscriptions)
+                            .set({ 
+                                status: 'Paused',
+                                nextInvoice: null // Clear next invoice since subscription is paused
+                            })
+                            .where(eq(schema.subscriptions.subscriptionid, subscription.subscriptionid));
+                    } else {
+                        // Update next invoice date normally
+                        await db.update(schema.subscriptions)
+                            .set({ nextInvoice: nextInvoiceTimestamp })
+                            .where(eq(schema.subscriptions.subscriptionid, subscription.subscriptionid));
+                    }
                 }
 
             } catch (error) {

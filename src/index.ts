@@ -120,19 +120,7 @@ app.use('/api/stripe/webhook', cors({
 
 // Default CORS configuration for other endpoints
 app.use('*', cors({
-	origin: (origin) => {
-		// Allow localhost for development
-		if (origin?.includes('localhost')) return origin;
-		
-		// Allow production and dev domains
-		if (origin === 'https://dev.invoices-apg.pages.dev') return origin;
-		
-		// Allow preview domains (e.g., https://a2405388.invoices-apg.pages.dev)
-		if (origin?.match(/https:\/\/[a-zA-Z0-9]+\.invoices-apg\.pages\.dev$/)) return origin;
-		
-		// Fallback for development
-		return 'http://localhost:3000';
-	},
+	origin: ['http://localhost:3000', 'https://dev.invoices-apg.pages.dev'],
 	allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
 	allowHeaders: ['Content-Type', 'Authorization'],
 	exposeHeaders: ['Content-Length', 'X-Requested-With'],
@@ -285,21 +273,33 @@ export default {
   // Define scheduled functions to match the cron triggers from wrangler.toml
   scheduled: async (event: { cron: string }, env: Env, ctx: ExecutionContext) => {
     const scheduler = app.fetch;
-    const url = new URL('https://placeholder-url.com');
+    const url = new URL(process.env.API_URL!);
     
     // Determine which endpoint to call based on cron schedule
     switch (event.cron) {
-      case "0 4 * * *":
-        // Process overdue invoices at 4:00 UTC
-        url.pathname = '/api/cron/process-invoices';
-        break;
       case "0 5 * * *":
         // Process reminders at 5:00 UTC
         url.pathname = '/api/cron/process-reminders';
         break;
       case "0 6 * * *":
-        // Process subscription invoices at 6:00 UTC
-        url.pathname = '/api/cron/process-subscriptions';
+        // Process overdue invoices at 6:00 UTC
+        url.pathname = '/api/cron/process-invoices';
+        
+        // Also process subscriptions (since both are scheduled at 6:00 UTC)
+        const subscriptionUrl = new URL(process.env.API_URL!);
+        subscriptionUrl.pathname = '/api/cron/process-subscriptions';
+        const subscriptionRequest = new Request(subscriptionUrl, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        try {
+          const subscriptionResponse = await scheduler(subscriptionRequest, env, ctx);
+          const subscriptionResult = await subscriptionResponse.json();
+          console.log(`CRON subscriptions ${event.cron} executed:`, subscriptionResult);
+        } catch (error) {
+          console.error(`CRON subscriptions ${event.cron} failed:`, error);
+        }
         break;
       case "0 7 * * *":
         // Placeholder for the scheduled invoices task at 7:00 UTC
