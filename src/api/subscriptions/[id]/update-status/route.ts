@@ -19,14 +19,27 @@ export async function PUT(c: Context) {
     }
     
     const db = createDB();
-    const result = await db.update(schema.subscriptions)
-      .set({ status })
-      .where(eq(schema.subscriptions.subscriptionid, id))
-      .returning();
+    
+    // Try to find subscription by public ID first, then by UUID
+    let subscription = await db.query.subscriptions.findFirst({
+      where: eq(schema.subscriptions.publicId, id)
+    });
 
-    if (result.length === 0) {
+    if (!subscription) {
+      // Try by UUID as fallback
+      subscription = await db.query.subscriptions.findFirst({
+        where: eq(schema.subscriptions.subscriptionid, id)
+      });
+    }
+
+    if (!subscription) {
       return c.json({ error: 'Subscription not found' }, 404);
     }
+
+    const result = await db.update(schema.subscriptions)
+      .set({ status })
+      .where(eq(schema.subscriptions.subscriptionid, subscription.subscriptionid))
+      .returning();
 
     return c.json(result[0]);
   } catch (error) {

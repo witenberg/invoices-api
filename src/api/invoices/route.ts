@@ -34,6 +34,18 @@ export async function GET(c: Context) {
       statusCondition = [eq(schema.invoices.isDeleted, false)];
     }
     
+    // Handle subscription ID - if it's a public ID, find the UUID
+    let subscriptionId = subId;
+    if (subId && subId.includes('-')) {
+      // This is a public ID, find the UUID
+      const subscription = await db.query.subscriptions.findFirst({
+        where: eq(schema.subscriptions.publicId, subId)
+      });
+      if (subscription) {
+        subscriptionId = subscription.subscriptionid;
+      }
+    }
+
     const invoices = await db.select({
       invoiceid: schema.invoices.invoiceid,
       publicId: schema.invoices.publicId,
@@ -51,7 +63,7 @@ export async function GET(c: Context) {
     .leftJoin(schema.clients, eq(schema.invoices.clientid, schema.clients.clientid))
     .where(and(
       eq(schema.invoices.userid, userId),
-      ...(subId ? [eq(schema.invoices.subscriptionid, subId)] : []),
+      ...(subscriptionId ? [eq(schema.invoices.subscriptionid, subscriptionId)] : []),
       ...(clientId ? [eq(schema.invoices.clientid, clientId)] : []),
       ...statusCondition
     ))

@@ -34,6 +34,18 @@ export async function POST(c: Context) {
     // Round to 2 decimal places
     total = Math.round(total * 100) / 100;
 
+    // Handle subscription ID - if it's a public ID, find the UUID
+    let subscriptionId = invoice.subscriptionid;
+    if (invoice.subscriptionid && invoice.subscriptionid.includes('-')) {
+      // This is a public ID, find the UUID
+      const subscription = await db.query.subscriptions.findFirst({
+        where: eq(schema.subscriptions.publicId, invoice.subscriptionid)
+      });
+      if (subscription) {
+        subscriptionId = subscription.subscriptionid;
+      }
+    }
+
     const invoiceData = {
       userid: invoice.userid,
       clientid: invoice.clientid,
@@ -50,7 +62,7 @@ export async function POST(c: Context) {
       secondtaxname: invoice.options.secondtax?.name || null,
       acceptcreditcards: Boolean(invoice.options.acceptcreditcards) || false,
       acceptpaypal: Boolean(invoice.options.acceptpaypal) || false,
-      subscriptionid: invoice.subscriptionid ? invoice.subscriptionid : null,
+      subscriptionid: subscriptionId,
       products: invoice.items.map((item: InvoiceItem) => ({
         id: item.id,
         name: item.name,

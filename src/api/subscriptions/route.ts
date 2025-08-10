@@ -50,12 +50,13 @@ export async function GET(c: Context) {
       where: (clients, { inArray }) => inArray(clients.clientid, clientIds),
       columns: {
         clientid: true,
+        publicId: true,
         name: true
       }
     });
     
-    // Create a map of client IDs to names for quick lookup
-    const clientMap = new Map(clients.map(client => [client.clientid, client.name]));
+    // Create a map of client IDs to names and public IDs for quick lookup
+    const clientMap = new Map(clients.map(client => [client.clientid, { name: client.name, publicId: client.publicId }]));
     
     // Process subscriptions to include client names
     const processedSubscriptions = subscriptions.map(subscription => {
@@ -75,14 +76,16 @@ export async function GET(c: Context) {
       // If subscription is deleted, show status as "Deleted"
       const displayStatus = subscription.isDeleted ? 'Deleted' : subscription.status;
 
+      const clientInfo = clientMap.get(subscription.clientid);
+
       return {
-        subscriptionid: subscription.subscriptionid,
+        subscriptionid: subscription.publicId,
         status: displayStatus,
         isDeleted: subscription.isDeleted || false,
         currency: subscription.currency,
         total: totalValue,
-        client_id: subscription.clientid,
-        client_name: clientMap.get(subscription.clientid) || 'Unknown Client',
+        client_id: clientInfo?.publicId || subscription.clientid,
+        client_name: clientInfo?.name || 'Unknown Client',
         next_invoice: nextInvoiceDate,
         frequency: subscription.frequency,
         salestaxname: subscription.salestaxname || null,

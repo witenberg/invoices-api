@@ -14,10 +14,18 @@ export async function GET(c: Context) {
         const db = createDB();
         const subscriptionId = id;
 
-        // Fetch subscription first
-        const subscription = await db.query.subscriptions.findFirst({
-            where: eq(schema.subscriptions.subscriptionid, subscriptionId),
+        // Fetch subscription first - try by public ID first, then by UUID
+        let subscription = await db.query.subscriptions.findFirst({
+            where: eq(schema.subscriptions.publicId, subscriptionId),
         });
+        console.log('subscription', subscription);
+
+        if (!subscription) {
+            // Try by UUID as fallback
+            subscription = await db.query.subscriptions.findFirst({
+                where: eq(schema.subscriptions.subscriptionid, subscriptionId),
+            });
+        }
 
         if (!subscription) {
             return c.json({ error: 'Subscription not found' }, 404);
@@ -27,6 +35,7 @@ export async function GET(c: Context) {
         const client = await db.query.clients.findFirst({
             where: eq(schema.clients.clientid, subscription.clientid),
             columns: {
+                publicId: true,
                 name: true,
                 email: true,
                 address: true
@@ -36,7 +45,7 @@ export async function GET(c: Context) {
         // Fetch related invoices count
         const invoiceCountResult = await db.select({ count: sql<number>`count(*)` })
             .from(schema.invoices)
-            .where(eq(schema.invoices.subscriptionid, subscriptionId));
+            .where(eq(schema.invoices.subscriptionid, subscription.subscriptionid));
         
         const totalInvoices = invoiceCountResult[0]?.count ?? 0;
 
@@ -56,7 +65,7 @@ export async function GET(c: Context) {
 
         // Construct the response data, ensuring types match the frontend expectations
         const subData = {
-            subscriptionid: subscription.subscriptionid,
+            subscriptionid: subscription.publicId,
             start_date: toDateString(subscription.startDate), // Convert Date to YYYY-MM-DD string
             frequency: subscription.frequency,
             end_date: subscription.endDate ? toDateString(subscription.endDate) : undefined, // Convert Date to YYYY-MM-DD string
@@ -73,7 +82,7 @@ export async function GET(c: Context) {
             secondtaxname: subscription.secondtaxname || undefined,
             acceptcreditcards: subscription.acceptcreditcards, // Already boolean
             acceptpaypal: subscription.acceptpaypal, // Already boolean
-            client_id: subscription.clientid,
+            client_id: client.publicId,
             client_name: client.name, // Use data from separate client query
             client_email: client.email,
             client_address: client.address || undefined,

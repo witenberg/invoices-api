@@ -16,19 +16,45 @@ export async function POST(c: Context) {
       return c.json({ error: "Missing required fields" }, 400);
     }
 
+    const db = createDB();
+    
     // Validate clientid
     if (!sub.invoicePrototype.clientid) {
       return c.json({ error: "Missing clientid" }, 400);
+    }
+
+    // Handle client ID - if it's a public ID, find the UUID
+    let clientId = sub.invoicePrototype.clientid;
+    console.log('clientId', clientId);
+    if (clientId && clientId.startsWith('cli-')) {
+      // This is a public ID, find the UUID
+      const client = await db.query.clients.findFirst({
+        where: eq(schema.clients.publicId, clientId)
+      });
+      if (client) {
+        clientId = client.clientid;
+      } else {
+        return c.json({ error: "Client not found" }, 404);
+      }
     }
 
     // Validate invoicePrototype.products
     if (!sub.invoicePrototype.products || !Array.isArray(sub.invoicePrototype.products)) {
       return c.json({ error: "Missing or invalid items in invoice prototype" }, 400);
     }
-
-    const db = createDB();
     let subid = sub.subscriptionid ? sub.subscriptionid : undefined;
     const isEditMode = !!subid;
+    
+    // If we have a public ID, we need to find the actual UUID for database operations
+    if (isEditMode && subid && subid.startsWith('sub-')) {
+      // This is a public ID, find the UUID
+      const existingSubscription = await db.query.subscriptions.findFirst({
+        where: eq(schema.subscriptions.publicId, subid)
+      });
+      if (existingSubscription) {
+        subid = existingSubscription.subscriptionid;
+      }
+    }
     
     let nextInvoice: Date | null;
     let shouldCreateInvoice = false;
@@ -67,7 +93,7 @@ export async function POST(c: Context) {
 
     const subscriptionData = {
       userid: sub.invoicePrototype.userid,
-      clientid: sub.invoicePrototype.clientid,
+      clientid: clientId,
       currency: sub.invoicePrototype.currency,
       language: sub.invoicePrototype.language,
       notes: sub.notes || null,
@@ -103,7 +129,7 @@ export async function POST(c: Context) {
     } else {
       // Create new subscription
       const result = await db.insert(schema.subscriptions)
-        .values(subscriptionData)
+        .values(subscriptionData as any)
         .returning({ insertedId: schema.subscriptions.subscriptionid });
       subid = result[0]?.insertedId;
     }
@@ -141,7 +167,7 @@ export async function POST(c: Context) {
       };
 
       const invoiceResult = await db.insert(schema.invoices)
-        .values(invoiceData)
+        .values(invoiceData as any)
         .returning({ insertedId: schema.invoices.invoiceid });
 
       const invoiceId = invoiceResult[0]?.insertedId;
@@ -161,7 +187,15 @@ export async function POST(c: Context) {
       }
     }
 
-    return c.json({ success: true, subscriptionid: subid });
+    // Get the public ID for the saved subscription
+    const savedSubscription = await db.query.subscriptions.findFirst({
+      where: eq(schema.subscriptions.subscriptionid, subid)
+    });
+
+    return c.json({ 
+      success: true, 
+      subscriptionid: savedSubscription?.publicId || subid 
+    });
   } catch (error) {
     console.error("Error saving subscription:", error);
     return c.json({ 

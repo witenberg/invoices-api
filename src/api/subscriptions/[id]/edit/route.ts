@@ -20,10 +20,17 @@ export async function GET(c: Context) {
         const db = createDB();
         const subscriptionId = id;
 
-        // Fetch subscription first
-        const subscriptionFromDb = await db.query.subscriptions.findFirst({
-            where: eq(schema.subscriptions.subscriptionid, subscriptionId),
+        // Fetch subscription first - try by public ID first, then by UUID
+        let subscriptionFromDb = await db.query.subscriptions.findFirst({
+            where: eq(schema.subscriptions.publicId, subscriptionId),
         });
+
+        if (!subscriptionFromDb) {
+            // Try by UUID as fallback
+            subscriptionFromDb = await db.query.subscriptions.findFirst({
+                where: eq(schema.subscriptions.subscriptionid, subscriptionId),
+            });
+        }
 
         if (!subscriptionFromDb) {
             return c.json({ error: 'Subscription not found' }, 404);
@@ -34,6 +41,7 @@ export async function GET(c: Context) {
             where: eq(schema.clients.clientid, subscriptionFromDb.clientid),
             columns: {
                 clientid: true,
+                publicId: true,
                 name: true,
                 email: true,
                 address: true
@@ -57,7 +65,7 @@ export async function GET(c: Context) {
 
         // Construct the response data matching the Subscription type structure
         const subDataForEdit: Subscription = {
-            subscriptionid: subscriptionFromDb.subscriptionid,
+            subscriptionid: subscriptionFromDb.publicId,
             start_date: toDateString(subscriptionFromDb.startDate), // Convert Date to YYYY-MM-DD string
             days_to_pay: subscriptionFromDb.daysToPay || undefined,
             enable_reminders: subscriptionFromDb.enable_reminders || false,
@@ -69,7 +77,7 @@ export async function GET(c: Context) {
             // Construct the invoicePrototype part according to the InvoicePrototype structure
             invoicePrototype: {
                 userid: subscriptionFromDb.userid,
-                clientid: subscriptionFromDb.clientid,
+                clientid: clientFromDb.publicId,
                 currency: subscriptionFromDb.currency,
                 language: subscriptionFromDb.language,
                 notes: subscriptionFromDb.notes || undefined,

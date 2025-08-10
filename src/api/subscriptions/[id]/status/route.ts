@@ -12,15 +12,27 @@ export async function GET(c: Context) {
 
     const db = createDB();
     
-    // Fetch subscription status
-    const subscription = await db.select({
+    // Fetch subscription status - try by public ID first, then by UUID
+    let subscription = await db.select({
       status: schema.subscriptions.status,
       subscriptionid: schema.subscriptions.subscriptionid,
       isDeleted: schema.subscriptions.isDeleted
     })
     .from(schema.subscriptions)
-    .where(eq(schema.subscriptions.subscriptionid, id))
+    .where(eq(schema.subscriptions.publicId, id))
     .limit(1);
+
+    if (!subscription || subscription.length === 0) {
+      // Try by UUID as fallback
+      subscription = await db.select({
+        status: schema.subscriptions.status,
+        subscriptionid: schema.subscriptions.subscriptionid,
+        isDeleted: schema.subscriptions.isDeleted
+      })
+      .from(schema.subscriptions)
+      .where(eq(schema.subscriptions.subscriptionid, id))
+      .limit(1);
+    }
 
     if (!subscription || subscription.length === 0) {
       return c.json({ error: "Subscription not found" }, 404);
@@ -61,15 +73,27 @@ export async function PATCH(c: Context) {
 
     const db = createDB();
     
-    // First check if subscription exists
-    const existingSubscription = await db.select({
+    // First check if subscription exists - try by public ID first, then by UUID
+    let existingSubscription = await db.select({
       status: schema.subscriptions.status,
       subscriptionid: schema.subscriptions.subscriptionid,
       isDeleted: schema.subscriptions.isDeleted
     })
     .from(schema.subscriptions)
-    .where(eq(schema.subscriptions.subscriptionid, id))
+    .where(eq(schema.subscriptions.publicId, id))
     .limit(1);
+
+    if (!existingSubscription || existingSubscription.length === 0) {
+      // Try by UUID as fallback
+      existingSubscription = await db.select({
+        status: schema.subscriptions.status,
+        subscriptionid: schema.subscriptions.subscriptionid,
+        isDeleted: schema.subscriptions.isDeleted
+      })
+      .from(schema.subscriptions)
+      .where(eq(schema.subscriptions.subscriptionid, id))
+      .limit(1);
+    }
 
     if (!existingSubscription || existingSubscription.length === 0) {
       return c.json({ error: "Subscription not found" }, 404);
@@ -89,9 +113,11 @@ export async function PATCH(c: Context) {
       if (isDeleted !== undefined) updateData.isDeleted = isDeleted;
     }
 
+    // Use the actual UUID for the update
+    const subscriptionId = existingSubscription[0].subscriptionid;
     await db.update(schema.subscriptions)
       .set(updateData)
-      .where(eq(schema.subscriptions.subscriptionid, id));
+      .where(eq(schema.subscriptions.subscriptionid, subscriptionId));
 
     return c.json({ 
       success: true,

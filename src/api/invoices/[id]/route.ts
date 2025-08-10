@@ -28,6 +28,18 @@ export async function GET(c: Context) {
             return c.json({ error: "Client not found" }, 404);
         }
 
+        // Get subscription public ID if subscription exists
+        let subscriptionPublicId = undefined;
+        if (invoice.subscriptionid) {
+            const subscription = await db.query.subscriptions.findFirst({
+                where: eq(schema.subscriptions.subscriptionid, invoice.subscriptionid),
+                columns: {
+                    publicId: true
+                }
+            });
+            subscriptionPublicId = subscription?.publicId;
+        }
+
         const invoiceData = {
             invoiceid: invoice.invoiceid,
             publicId: invoice.publicId,
@@ -58,7 +70,7 @@ export async function GET(c: Context) {
             days_to_pay: invoice.days_to_pay || undefined,
             enable_reminders: invoice.enable_reminders || false,
             reminder_days_before: invoice.reminder_days_before || undefined,
-            subscriptionid: invoice.subscriptionid || undefined,
+            subscriptionid: subscriptionPublicId,
         };
 
         console.log(invoiceData);
