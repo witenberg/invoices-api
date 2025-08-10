@@ -36,6 +36,7 @@ export async function GET(c: Context) {
     
     const invoices = await db.select({
       invoiceid: schema.invoices.invoiceid,
+      publicId: schema.invoices.publicId,
       userid: schema.invoices.userid,
       clientid: schema.invoices.clientid,
       status: schema.invoices.status,

@@ -25,6 +25,15 @@ export async function POST(c: Context) {
 
         const db = createDB();
         
+        // Find invoice by public ID to get internal ID for update
+        const invoice = await db.query.invoices.findFirst({
+            where: eq(schema.invoices.publicId, id)
+        });
+
+        if (!invoice) {
+            return c.json({ error: "Invoice not found" }, 404);
+        }
+
         // Update invoice status to 'Sent' and set sent_at timestamp
         const now = new Date();
         const updatedInvoice = await db
@@ -33,7 +42,7 @@ export async function POST(c: Context) {
                 status: 'Sent',
                 sent_at: now
             })
-            .where(eq(schema.invoices.invoiceid, id))
+            .where(eq(schema.invoices.invoiceid, invoice.invoiceid))
             .returning({ status: schema.invoices.status });
 
         if (!updatedInvoice || updatedInvoice.length === 0) {

@@ -17,7 +17,7 @@ export async function GET(c: Context) {
         
         // Fetch invoice
         const invoice = await db.query.invoices.findFirst({
-            where: eq(schema.invoices.invoiceid, id)
+            where: eq(schema.invoices.publicId, id)
         });
 
         if (!invoice) {
@@ -98,7 +98,7 @@ export async function GET(c: Context) {
         doc.text('INVOICE', 20, 20);
         
         doc.setFontSize(12);
-        doc.text(`#${invoiceid}`, 20, 30);
+        doc.text(`#${invoice.publicId}`, 20, 30);
 
         // Sender info
         doc.setFontSize(14);
@@ -198,7 +198,7 @@ export async function GET(c: Context) {
         return new Response(pdfBuffer, {
             headers: {
                 'Content-Type': 'application/pdf',
-                'Content-Disposition': `attachment; filename="${username}-invoice-${invoiceid}.pdf"`,
+                'Content-Disposition': `attachment; filename="${username}-invoice-${invoice.publicId}.pdf"`,
             },
         });
     } catch (error) {

@@ -6,6 +6,7 @@ export const app = pgSchema("app");
 
 export const usersInApp = app.table("users", {
 	userid: uuid().defaultRandom().notNull().primaryKey(),
+	publicId: varchar("public_id", { length: 20 }).notNull().unique(),
 	username: varchar({ length: 255 }).notNull(),
 	email: varchar({ length: 255 }).notNull(),
 	password: varchar({ length: 255 }),
@@ -35,6 +36,7 @@ export const usersInApp = app.table("users", {
 
 export const clientsInApp = app.table("clients", {
 	clientid: uuid().defaultRandom().notNull().primaryKey(),
+	publicId: varchar("public_id", { length: 20 }).notNull().unique(),
 	userid: uuid().notNull(),
 	name: varchar({ length: 255 }).notNull(),
 	email: varchar({ length: 255 }).notNull(),
@@ -66,6 +68,7 @@ export const logsInApp = app.table("logs", {
 
 export const subscriptionsInApp = app.table("subscriptions", {
 	subscriptionid: uuid().defaultRandom().notNull().primaryKey(),
+	publicId: varchar("public_id", { length: 20 }).notNull().unique(),
 	userid: uuid().notNull(),
 	clientid: uuid().notNull(),
 	currency: varchar({ length: 10 }).notNull(),
@@ -105,6 +108,7 @@ export const subscriptionsInApp = app.table("subscriptions", {
 
 export const invoicesInApp = app.table("invoices", {
 	invoiceid: uuid().defaultRandom().notNull().primaryKey(),
+	publicId: varchar("public_id", { length: 20 }).notNull().unique(),
 	userid: uuid().notNull(),
 	clientid: uuid().notNull(),
 	status: varchar({ length: 50 }).notNull(),
@@ -162,6 +166,7 @@ export const emailVerificationTokensInApp = app.table("email_verification_tokens
 
 export const salesPagesInApp = app.table("sales_pages", {
 	id: uuid().defaultRandom().notNull().primaryKey(),
+	publicId: varchar("public_id", { length: 20 }).notNull().unique(),
 	userid: uuid().notNull(),
 	title: varchar({ length: 255 }).notNull(),
 	description: text(),

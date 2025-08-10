@@ -72,7 +72,7 @@ export async function POST(c: Context) {
     } else {
       // Create new invoice
       const result = await db.insert(schema.invoices)
-        .values(invoiceData)
+        .values(invoiceData as any)
         .returning({ insertedId: schema.invoices.invoiceid });
       savedInvoiceId = result[0]?.insertedId;
       if (!savedInvoiceId) {
@@ -93,7 +93,16 @@ export async function POST(c: Context) {
         .where(eq(schema.invoices.invoiceid, savedInvoiceId));
     }
 
-    return c.json({ success: true, invoiceid: savedInvoiceId });
+    // Get the public ID for the saved invoice
+    const savedInvoice = await db.query.invoices.findFirst({
+      where: eq(schema.invoices.invoiceid, savedInvoiceId)
+    });
+
+    return c.json({ 
+      success: true, 
+      invoiceid: savedInvoiceId,
+      publicId: savedInvoice?.publicId 
+    });
   } catch (error) {
     console.error("Error saving invoice:", error);
     return c.json({ 

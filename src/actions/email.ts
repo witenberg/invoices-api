@@ -10,18 +10,25 @@ interface PaymentLinkResponse {
   url: string;
 }
 
-export async function sendInvoiceEmail(invoiceid: string, isReminder: boolean = false, paid: boolean = false) {
+export async function sendInvoiceEmail(invoiceId: string, isReminder: boolean = false, paid: boolean = false) {
   try {
     const db = createDB();
     
-    // Fetch invoice
-    const invoice = await db.query.invoices.findFirst({
-      where: eq(schema.invoices.invoiceid, invoiceid),
+    // Try to find invoice by internal ID first, then by public ID
+    let invoice = await db.query.invoices.findFirst({
+      where: eq(schema.invoices.invoiceid, invoiceId),
     });
+
+    // If not found by internal ID, try by public ID
+    if (!invoice) {
+      invoice = await db.query.invoices.findFirst({
+        where: eq(schema.invoices.publicId, invoiceId),
+      });
+    }
 
     if (!invoice) {
       console.error('Error fetching invoice: Invoice not found');
-      throw new Error(`Invoice with ID ${invoiceid} not found`);
+      throw new Error(`Invoice with ID ${invoiceId} not found`);
     }
     
     // Fetch client
@@ -34,8 +41,8 @@ export async function sendInvoiceEmail(invoiceid: string, isReminder: boolean = 
     console.log("client", client);
 
     if (!client) {
-        console.error('Error fetching related data: Client not found for invoice', invoiceid);
-        throw new Error(`Client not found for invoice ID ${invoiceid}`);
+        console.error('Error fetching related data: Client not found for invoice', invoiceId);
+        throw new Error(`Client not found for invoice ID ${invoiceId}`);
     }
 
     // Fetch user with custom message fields
@@ -53,8 +60,8 @@ export async function sendInvoiceEmail(invoiceid: string, isReminder: boolean = 
     console.log("user", user);
 
     if (!user) {
-        console.error('Error fetching related data: User not found for invoice', invoiceid, 'with userid:', invoice.userid);
-        throw new Error(`User not found for invoice ID ${invoiceid}`);
+        console.error('Error fetching related data: User not found for invoice', invoiceId, 'with userid:', invoice.userid);
+        throw new Error(`User not found for invoice ID ${invoiceId}`);
     }
 
     const total = Number(invoice.total);
@@ -64,8 +71,8 @@ export async function sendInvoiceEmail(invoiceid: string, isReminder: boolean = 
     
     // Use tracking URL for unpaid invoices, direct URL for paid invoices
     const invoiceUrl = paid 
-      ? `${process.env.APP_URL}/invoices/${invoiceid}`
-      : `${process.env.APP_URL}/invoices/${invoiceid}?from=email`;
+      ? `${process.env.APP_URL}/invoices/${invoice.publicId}`
+      : `${process.env.APP_URL}/invoices/${invoice.publicId}?from=email`;
     
     // Get the appropriate message based on paid parameter
     const message = paid 
@@ -82,7 +89,7 @@ export async function sendInvoiceEmail(invoiceid: string, isReminder: boolean = 
         : `Invoice from ${user_name}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
-          <h2 style="font-size: 24px; font-weight: bold; margin-bottom: 24px;">Invoice ${invoiceid} to ${client.email}</h2>
+          <h2 style="font-size: 24px; font-weight: bold; margin-bottom: 24px;">Invoice ${invoice.publicId} to ${client.email}</h2>
           
           <p style="margin-bottom: 16px;">
             An invoice from ${user_name} for ${currency} ${total.toFixed(2)} ${paid ? 'was paid' : 'requires a payment'}.

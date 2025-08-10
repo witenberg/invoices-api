@@ -28,6 +28,7 @@ export interface InvoiceOptions {
 
 export interface Invoice {
   invoiceid?: string
+  publicId?: string
   userid: string
   clientid: string
   status: InvoiceStatus
@@ -38,6 +39,7 @@ export interface Invoice {
 
 export interface InvoiceToDisplay {
   invoiceid: string
+  publicId?: string
   userid: string
   clientid: string
   status: InvoiceStatus
@@ -49,6 +51,7 @@ export interface InvoiceToDisplay {
 
 export interface InvoiceToEdit {
   invoiceid: string
+  publicId?: string
   userid: string
   clientid: string
   status: InvoiceStatus
@@ -86,6 +89,7 @@ export interface InvoiceSubscription {
 
 export interface InvoicePrototype {
   userid: string
+  publicId?: string
   clientid: string
   currency: string
   language: string
@@ -108,6 +112,7 @@ export interface InvoicePrototype {
 
 export interface InvoiceToPDF {
   invoiceid: string;
+  publicId?: string
   date: string;
   currency: string;
   products: { name: string; amount: string; quantity: number }[];

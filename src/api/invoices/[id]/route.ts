@@ -13,7 +13,7 @@ export async function GET(c: Context) {
     try {
         const db = createDB();
         const invoice = await db.query.invoices.findFirst({
-            where: eq(schema.invoices.invoiceid, id)
+            where: eq(schema.invoices.publicId, id)
         }) as InvoiceToEdit | undefined;
 
         if (!invoice) {
@@ -30,6 +30,7 @@ export async function GET(c: Context) {
 
         const invoiceData = {
             invoiceid: invoice.invoiceid,
+            publicId: invoice.publicId,
             userid: invoice.userid,
             clientid: invoice.clientid,
             status: invoice.status,
