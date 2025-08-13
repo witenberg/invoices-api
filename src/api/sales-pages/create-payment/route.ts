@@ -17,7 +17,7 @@ export async function POST(c: Context) {
     // Fetch sales page details
     const salesPage = await db
       .select({
-        id: schema.salesPages.id,
+        publicId: schema.salesPages.publicId,
         title: schema.salesPages.title,
         price: schema.salesPages.price,
         currency: schema.salesPages.currency,
@@ -28,7 +28,7 @@ export async function POST(c: Context) {
       })
       .from(schema.salesPages)
       .leftJoin(schema.users, eq(schema.users.userid, schema.salesPages.userid))
-      .where(eq(schema.salesPages.id, salesPageId))
+      .where(eq(schema.salesPages.publicId, salesPageId))
       .limit(1);
 
     if (!salesPage[0]) {
@@ -43,7 +43,7 @@ export async function POST(c: Context) {
       return c.json({ error: 'Sales page is not published' }, 400);
     }
 
-    const { stripeAccountid, price, currency, frequency, title } = salesPage[0];
+    const { stripeAccountid, price, currency, frequency, title, publicId } = salesPage[0];
 
     // Verify the Stripe account is valid and can accept payments
     try {
@@ -78,10 +78,10 @@ export async function POST(c: Context) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.APP_URL}/salespage/${salesPageId}/success`,
-      cancel_url: `${process.env.APP_URL}/salespage/${salesPageId}`,
+      success_url: `${process.env.APP_URL}/salespage/${publicId}/success`,
+      cancel_url: `${process.env.APP_URL}/salespage/${publicId}`,
       metadata: {
-        salesPageId: salesPageId.toString(),
+        salesPageId: publicId.toString(),
         sellerAccountId: stripeAccountid
       }
     };

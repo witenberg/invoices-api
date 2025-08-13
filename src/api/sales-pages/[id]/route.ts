@@ -21,7 +21,7 @@ export async function GET(c: Context) {
         // Fetch sales page details
         const salesPage = await db
             .select({
-                id: schema.salesPages.id,
+                publicId: schema.salesPages.publicId,
                 title: schema.salesPages.title,
                 description: schema.salesPages.description,
                 price: schema.salesPages.price,
@@ -37,7 +37,7 @@ export async function GET(c: Context) {
             })
             .from(schema.salesPages)
             .leftJoin(schema.users, eq(schema.users.userid, schema.salesPages.userid))
-            .where(eq(schema.salesPages.id, id))
+            .where(eq(schema.salesPages.publicId, id))
             .limit(1);
 
         if (!salesPage[0]) {

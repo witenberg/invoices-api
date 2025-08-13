@@ -37,7 +37,7 @@ export async function GET(c: Context) {
     // Query sales pages with order counts
     const salesPages = await db
       .select({
-        salespageid: schema.salesPages.id,
+        publicId: schema.salesPages.publicId,
         title: schema.salesPages.title,
         status: schema.salesPages.status,
         isDeleted: schema.salesPages.isDeleted,
@@ -47,8 +47,7 @@ export async function GET(c: Context) {
       })
       .from(schema.salesPages)
       .where(and(...conditions))
-      .groupBy(schema.salesPages.id)
-      .orderBy(schema.salesPages.id);
+      .orderBy(schema.salesPages.publicId);
 
     // Process results to show correct status for deleted pages
     const processedSalesPages = salesPages.map(page => ({

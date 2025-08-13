@@ -19,7 +19,7 @@ export async function GET(c: Context) {
       isDeleted: schema.salesPages.isDeleted
     })
     .from(schema.salesPages)
-    .where(eq(schema.salesPages.id, id))
+    .where(eq(schema.salesPages.publicId, id))
     .limit(1);
 
     if (!salesPage || salesPage.length === 0) {
@@ -60,7 +60,7 @@ export async function PATCH(c: Context) {
       isDeleted: schema.salesPages.isDeleted
     })
     .from(schema.salesPages)
-    .where(eq(schema.salesPages.id, id))
+    .where(eq(schema.salesPages.publicId, id))
     .limit(1);
 
     if (!existingSalesPage || existingSalesPage.length === 0) {
@@ -70,7 +70,7 @@ export async function PATCH(c: Context) {
     // Update the isDeleted flag
     await db.update(schema.salesPages)
       .set({ isDeleted })
-      .where(eq(schema.salesPages.id, id));
+      .where(eq(schema.salesPages.publicId, id));
 
     return c.json({ 
       success: true,
