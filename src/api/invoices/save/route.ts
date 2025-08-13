@@ -46,9 +46,20 @@ export async function POST(c: Context) {
       }
     }
 
+    // If clientid is a public ID, translate to internal UUID
+    let clientIdToUse = invoice.clientid;
+    if (typeof clientIdToUse === 'string' && clientIdToUse.startsWith('cli-')) {
+      const client = await db.query.clients.findFirst({
+        where: eq(schema.clients.publicId, clientIdToUse)
+      });
+      if (client) {
+        clientIdToUse = client.clientid;
+      }
+    }
+
     const invoiceData = {
       userid: invoice.userid,
-      clientid: invoice.clientid,
+      clientid: clientIdToUse,
       status: invoice.status,
       currency: invoice.options.currency,
       language: invoice.options.language,

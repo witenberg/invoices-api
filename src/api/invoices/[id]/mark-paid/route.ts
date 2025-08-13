@@ -13,10 +13,15 @@ export async function POST(c: Context) {
 
     const db = createDB();
     
-    // Fetch invoice
-    const invoice = await db.query.invoices.findFirst({
-      where: eq(schema.invoices.invoiceid, id)
+    // Accept publicId or UUID
+    let invoice = await db.query.invoices.findFirst({
+      where: eq(schema.invoices.publicId, id)
     });
+    if (!invoice) {
+      invoice = await db.query.invoices.findFirst({
+        where: eq(schema.invoices.invoiceid, id)
+      });
+    }
 
     if (!invoice) {
       return c.json({ error: "Invoice not found" }, 404);
@@ -43,12 +48,12 @@ export async function POST(c: Context) {
     // Update the invoice status to Paid
     await db.update(schema.invoices)
       .set({ status: 'Paid' })
-      .where(eq(schema.invoices.invoiceid, id));
+      .where(eq(schema.invoices.invoiceid, invoice.invoiceid));
 
     // Create a "Cash payment" record in the logs
     await db.insert(schema.logs).values({
       userid: user.userid,
-      action: `Marked invoice #${id} as paid (cash payment)`,
+      action: `Marked invoice #${invoice.publicId} as paid (cash payment)`,
       timestamp: new Date().toISOString()
     });
 
@@ -77,11 +82,11 @@ export async function POST(c: Context) {
             },
             confirm: false, // Don't try to confirm yet
             metadata: {
-              invoiceId: id.toString(),
+              invoiceId: invoice.publicId.toString(),
               paymentType: 'Cash',
               manuallyMarkedAsPaid: 'true'
             },
-            description: `Manual cash payment for Invoice #${id}`
+             description: `Manual cash payment for Invoice #${invoice.publicId}`
           },
           {
             stripeAccount: user.stripeAccountid
@@ -93,7 +98,7 @@ export async function POST(c: Context) {
           paymentIntent.id,
           {
             payment_method: 'pm_card_visa', // Use test card
-            return_url: `${process.env.APP_URL}/dashboard/invoices/${id}/details`
+             return_url: `${process.env.APP_URL}/dashboard/invoices/${invoice.publicId}/details`
           },
           {
             stripeAccount: user.stripeAccountid

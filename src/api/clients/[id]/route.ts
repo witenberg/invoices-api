@@ -12,11 +12,7 @@ export async function GET(c: Context) {
     try {
         const db = createDB();
         const client = await db.query.clients.findFirst({
-            where: eq(schema.clients.clientid, id),
-            // with: {
-            //     invoices: true,
-            //     subscriptions: true
-            // }
+            where: eq(schema.clients.publicId, id),
         });
 
         if (!client) {
@@ -28,7 +24,7 @@ export async function GET(c: Context) {
             .from(schema.invoices)
             .where(
                 and(
-                    eq(schema.invoices.clientid, id),
+                    eq(schema.invoices.clientid, client.clientid),
                     eq(schema.invoices.status, 'Overdue')
                 )
             );
@@ -36,7 +32,15 @@ export async function GET(c: Context) {
         const isDelinquent = overdueInvoices.length > 0;
 
         return c.json({
-            ...client,
+            publicId: client.publicId,
+            userid: client.userid,
+            name: client.name,
+            email: client.email,
+            address: client.address || '',
+            currency: client.currency || 'USD',
+            language: client.language || 'English',
+            status: client.status,
+            isDeleted: client.isDeleted || false,
             isDelinquent
         });
     } catch (error) {
@@ -63,14 +67,25 @@ export async function PUT(c: Context) {
                 currency: clientData.currency || 'USD',
                 language: clientData.language || 'English'
             })
-            .where(eq(schema.clients.clientid, id))
+            .where(eq(schema.clients.publicId, id))
             .returning();
 
         if (result.length === 0) {
             return c.json({ error: "Client not found" }, 404);
         }
 
-        return c.json(result[0]);
+        const updated = result[0];
+        return c.json({
+            publicId: updated.publicId,
+            userid: updated.userid,
+            name: updated.name,
+            email: updated.email,
+            address: updated.address || '',
+            currency: updated.currency || 'USD',
+            language: updated.language || 'English',
+            status: updated.status,
+            isDeleted: updated.isDeleted || false
+        });
     } catch (error) {
         console.error("Error updating client: ", error);
         return c.json({ error: "Internal Server Error" }, 500);
@@ -87,7 +102,7 @@ export async function DELETE(c: Context) {
     try {
         const db = createDB();
         const result = await db.delete(schema.clients)
-            .where(eq(schema.clients.clientid, id))
+            .where(eq(schema.clients.publicId, id))
             .returning();
 
         if (result.length === 0) {

@@ -14,10 +14,19 @@ export async function GET(c: Context) {
 
     const db = createDB();
     
-    // Fetch invoice
-    const invoice = await db.query.invoices.findFirst({
-      where: eq(schema.invoices.invoiceid, id)
+    // Try fetching by publicId first, then fallback to UUID only if it looks like a UUID
+    let invoice = await db.query.invoices.findFirst({
+      where: eq(schema.invoices.publicId, id)
     });
+    
+    if (!invoice) {
+      const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+      if (uuidRegex.test(id)) {
+        invoice = await db.query.invoices.findFirst({
+          where: eq(schema.invoices.invoiceid, id)
+        });
+      }
+    }
 
     if (!invoice) {
       return c.json({ error: "Invoice not found" }, 404);
@@ -29,11 +38,20 @@ export async function GET(c: Context) {
     }
 
     // First, check if there are logs for cash payments for this invoice
-    const cashPaymentLogs = await db.select()
+    // Look for cash payment logs by publicId first, then by internal UUID for backward compatibility
+    let cashPaymentLogs = await db.select()
       .from(schema.logs)
-      .where(like(schema.logs.action, `%invoice #${id} as paid%`))
+      .where(like(schema.logs.action, `%invoice #${invoice.publicId} as paid%`))
       .orderBy(desc(schema.logs.timestamp))
       .limit(1);
+
+    if (!cashPaymentLogs || cashPaymentLogs.length === 0) {
+      cashPaymentLogs = await db.select()
+        .from(schema.logs)
+        .where(like(schema.logs.action, `%invoice #${invoice.invoiceid} as paid%`))
+        .orderBy(desc(schema.logs.timestamp))
+        .limit(1);
+    }
     
     // If we found a cash payment log, create a cash payment record
     if (cashPaymentLogs.length > 0) {
@@ -99,7 +117,7 @@ export async function GET(c: Context) {
 
       // Filter payment intents by checking metadata
       const relevantPaymentIntents = paymentIntents.data.filter((pi: any) => 
-        pi.metadata && pi.metadata.invoiceId === id.toString()
+        pi.metadata && (pi.metadata.invoiceId === invoice.publicId.toString() || pi.metadata.invoiceId === invoice.invoiceid.toString())
       );
 
       // Add these to the payments array
@@ -140,7 +158,7 @@ export async function GET(c: Context) {
 
       // Filter sessions manually by checking metadata
       const relevantSessions = sessions.data.filter((session: any) => 
-        session.metadata && session.metadata.invoiceId === id.toString()
+        session.metadata && (session.metadata.invoiceId === invoice.publicId.toString() || session.metadata.invoiceId === invoice.invoiceid.toString())
       );
 
       if (relevantSessions.length === 0) {

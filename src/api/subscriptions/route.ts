@@ -6,7 +6,7 @@ import { toDateString } from '../../utils/dateUtils';
 export async function GET(c: Context) {
   const userId = c.req.query('userId');
   const status = c.req.query('status');
-  const clientId = c.req.query('clientId');
+  let clientId = c.req.query('clientId');
   const includeDeleted = c.req.query('includeDeleted') === 'true';
   
   if (!userId) {
@@ -35,6 +35,15 @@ export async function GET(c: Context) {
     }
     
     if (clientId) {
+      // If clientId is a public ID, resolve to internal UUID
+      if (clientId.startsWith('cli-')) {
+        const client = await db.query.clients.findFirst({
+          where: eq(schema.clients.publicId, clientId)
+        });
+        if (client) {
+          clientId = client.clientid;
+        }
+      }
       whereClause.push(eq(schema.subscriptions.clientid, clientId));
     }
     

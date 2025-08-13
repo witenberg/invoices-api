@@ -19,7 +19,7 @@ export async function GET(c: Context) {
       isDeleted: schema.clients.isDeleted
     })
     .from(schema.clients)
-    .where(eq(schema.clients.clientid, id))
+    .where(eq(schema.clients.publicId, id))
     .limit(1);
 
     if (!client || client.length === 0) {
@@ -60,7 +60,7 @@ export async function PATCH(c: Context) {
       isDeleted: schema.clients.isDeleted
     })
     .from(schema.clients)
-    .where(eq(schema.clients.clientid, id))
+    .where(eq(schema.clients.publicId, id))
     .limit(1);
 
     if (!existingClient || existingClient.length === 0) {
@@ -70,7 +70,7 @@ export async function PATCH(c: Context) {
     // Update the isDeleted flag
     await db.update(schema.clients)
       .set({ isDeleted })
-      .where(eq(schema.clients.clientid, id));
+      .where(eq(schema.clients.publicId, id));
 
     return c.json({ 
       success: true,

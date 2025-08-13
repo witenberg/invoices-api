@@ -16,7 +16,19 @@ export async function GET(c: Context) {
       orderBy: (clients, { asc }) => [asc(clients.name)]
     });
     
-    return c.json(clients);
+    // Hide internal UUIDs from client list endpoint
+    const safeClients = clients.map(client => ({
+      publicId: client.publicId,
+      userid: client.userid,
+      name: client.name,
+      email: client.email,
+      address: client.address || '',
+      currency: client.currency || 'USD',
+      language: client.language || 'English',
+      status: client.status,
+    }));
+
+    return c.json(safeClients);
   } catch (error) {
     console.error("Error fetching clients:", error);
     return c.json({ error: "Internal Server Error" }, 500);
@@ -35,8 +47,8 @@ export async function POST(c: Context) {
       address: client.address || '',
       currency: client.currency || 'USD',
       language: client.language || 'English'
-    }).returning({
-      clientid: schema.clients.clientid
+    } as any).returning({
+      publicId: schema.clients.publicId
     });
 
     return c.json(result[0]);

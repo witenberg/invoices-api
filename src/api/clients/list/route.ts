@@ -60,7 +60,7 @@ export async function GET(c: Context) {
             const hasOverdueInvoices = clientInvoices.some(inv => inv.status === 'Overdue');
 
             return {
-                clientid: client.clientid,
+                publicId: client.publicId,
                 name: client.name,
                 status: client.isDeleted ? "Deleted" : (client.status || "Active"),
                 currency: client.currency,

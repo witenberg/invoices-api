@@ -6,7 +6,7 @@ export async function GET(c: Context) {
   const userId = c.req.query('userId');
   const status = c.req.query('status');
   const subId = c.req.query('subId') ? c.req.query('subId') : null;
-  const clientId = c.req.query('clientId') ? c.req.query('clientId') : null;
+  let clientId = c.req.query('clientId') ? c.req.query('clientId') : null;
   const includeDeleted = c.req.query('includeDeleted') === 'true';
 
   if (!userId) {
@@ -43,6 +43,16 @@ export async function GET(c: Context) {
       });
       if (subscription) {
         subscriptionId = subscription.subscriptionid;
+      }
+    }
+
+    // If clientId is a public ID, translate to internal UUID
+    if (clientId && (clientId.startsWith('cli-'))) {
+      const client = await db.query.clients.findFirst({
+        where: eq(schema.clients.publicId, clientId)
+      });
+      if (client) {
+        clientId = client.clientid;
       }
     }
 
