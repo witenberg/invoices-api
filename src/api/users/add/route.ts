@@ -1,5 +1,6 @@
 import { Context } from 'hono';
 import { createDB, schema } from '../../../db/db';
+import { hashPassword } from '../../../utils/password';
 
 export async function POST(c: Context) {
   try {
@@ -13,15 +14,21 @@ export async function POST(c: Context) {
     const trialEndDate = new Date();
     trialEndDate.setDate(trialEndDate.getDate() + 14);
 
+    // Hash password if provided
+    let hashedPassword = null;
+    if (password) {
+      hashedPassword = await hashPassword(password);
+    }
+
     const db = createDB();
     const newUser = await db.insert(schema.users).values({
       username: name,
       email: email,
       loginMethod: login_method,
-      password: password,
+      password: hashedPassword,
       trialEndDate: trialEndDate,
       isTrialActive: true
-    }).returning();
+    } as any).returning();
 
     return c.json({
       userid: newUser[0].userid.toString(),

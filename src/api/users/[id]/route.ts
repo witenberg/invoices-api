@@ -3,17 +3,9 @@ import { createDB, schema } from '../../../db/db'
 import { eq } from 'drizzle-orm'
 import { Resend } from 'resend'
 import { randomBytes } from 'crypto'
-import { SignJWT } from 'jose'
+import { hashPassword, verifyPassword } from '../../../utils/password'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
-const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET)
-
-// Funkcja do szyfrowania hasła
-async function encryptPassword(password: string) {
-  return await new SignJWT({ password })
-    .setProtectedHeader({ alg: 'HS256' })
-    .sign(secret);
-}
 
 export async function GET(c: Context) {
     const id = c.req.param('id')
@@ -59,18 +51,17 @@ export async function PUT(c: Context) {
         // Handle password update
         if (password) {
             // For verified users, require current password
-            if (user.isverified && currentPassword) {
-                // Encrypt current password for comparison
-                const encryptedCurrentPassword = await encryptPassword(currentPassword);
+            if (user.isverified && currentPassword && user.password) {
                 // Verify current password
-                if (encryptedCurrentPassword !== user.password) {
+                const isCurrentPasswordValid = await verifyPassword(currentPassword, user.password);
+                if (!isCurrentPasswordValid) {
                     return c.json({ error: 'Current password is incorrect' }, 401)
                 }
             }
             
-            // Encrypt new password before saving
-            const encryptedPassword = await encryptPassword(password);
-            updateData.password = encryptedPassword
+            // Hash new password before saving
+            const hashedPassword = await hashPassword(password);
+            updateData.password = hashedPassword
         }
 
         // Reset verification if email changed for verified users

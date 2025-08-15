@@ -2,6 +2,7 @@ import { Context } from 'hono'
 import { eq, and, gt } from 'drizzle-orm'
 import { createDB } from '../../../db/db'
 import { users, emailVerificationTokens, logs } from '../../../db/schema'
+import { hashPassword } from '../../../utils/password'
 
 export async function POST(c: Context) {
   try {
@@ -60,9 +61,12 @@ export async function POST(c: Context) {
       }, 400)
     }
 
+    // Hash the new password
+    const hashedPassword = await hashPassword(password);
+
     // Update the user's password
     await db.update(users)
-      .set({ password: password })
+      .set({ password: hashedPassword })
       .where(eq(users.userid, user.userid))
       .execute();
 

@@ -3,8 +3,8 @@ import { jwtVerify } from 'jose';
 import { createDB, schema } from '../../../db/db';
 import { eq } from 'drizzle-orm';
 import { TwoFactorAuth } from '../../../utils/crypto';
+import { verifyPassword } from '../../../utils/password';
 
-const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET)
 
 export async function POST(c: Context) {
   try {
@@ -29,8 +29,8 @@ export async function POST(c: Context) {
     }
 
     try {
-      // Hasło jest już zaszyfrowane, więc porównujemy je bezpośrednio
-      const isMatch = password === user.password;
+      // Verify password using PBKDF2 hash
+      const isMatch = await verifyPassword(password, user.password);
 
       if (!isMatch) {
         return c.json({ error: "Invalid password" }, 401);
